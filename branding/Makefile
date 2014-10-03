@@ -29,6 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffol-branding/install
+	$(INSTALL_DIR) $(1)/etc/
 	$(INSTALL_DATA) files/etc/banner $(1)/etc/banner
 endef
 
