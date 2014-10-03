@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ffol-configurator
+PKG_NAME:=ffnw-configurator
 PKG_VERSION:=1
 PKG_RELEASE:=1
 
@@ -8,13 +8,13 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ffol-configurator
+define Package/ffnw-configurator
   SECTION:=daemon
-  CATEGORY:=Freifunk Oldenburg
+  CATEGORY:=Freifunk Nordwest
   TITLE:=Registers node on netmon
 endef
 
-define Package/ffol-configurator/description
+define Package/ffnw-configurator/description
 	Registers node on netmon
 endef
 
@@ -28,13 +28,13 @@ endef
 define Build/Compile
 endef
 
-define Package/ffol-configurator/install
+define Package/ffnw-configurator/install
 	$(INSTALL_DIR) $(1)/lib/gluon/cron/
 	$(INSTALL_DATA) files/lib/gluon/cron/configurator $(1)/lib/gluon/cron/configurator
-	$(INSTALL_DIR) $(1)/lib/ffol/configurator/
-	$(INSTALL_BIN) files/lib/ffol/configurator/configurator.sh $(1)/lib/ffol/configurator/
+	$(INSTALL_DIR) $(1)/lib/ffnw/configurator/
+	$(INSTALL_BIN) files/lib/ffnw/configurator/configurator.sh $(1)/lib/ffnw/configurator/
 	$(INSTALL_DIR) $(1)/etc/config/
 	$(INSTALL_CONF) files/configurator.config $(1)/etc/config/configurator
 endef
 
-$(eval $(call BuildPackage,ffol-configurator))
+$(eval $(call BuildPackage,ffnw-configurator))
