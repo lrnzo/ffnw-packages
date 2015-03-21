@@ -143,33 +143,43 @@ crawl() {
 
 	batman_adv_originators=$(
 		arr=""
-		direct_vpn=false
+		count="0"
+		direct_vpn="false"
 		while read line
 		do
-			case "$line" in
-				*mesh*)
-					direct_vpn=true
-				;;
-				*)
-					arr=$arr"$line|"
-				;;
-			esac
+			if [ ! $count -eq 0 ]; then
+				case "$line" in
+					*mesh*)
+						direct_vpn="true"
+					;;
+					*)
+						arr=$arr"$line|"
+					;;
+				esac
+			fi
+			let "count=count+1"
 		done </sys/kernel/debug/batman_adv/bat0/originators
+
 		OIFS=$IFS
 		IFS='|'
 		for org in $arr
 		do
+			org=$direct_vpn" $org"
 			echo $org | awk \
 			'BEGIN { FS=" "; i=0 }
 			/O/ { next }
 			/B/ { next }
 			{
+				sub("  ", " ", $0)
 				sub("\\(", "", $0)
 				sub("\\)", "", $0)
 				sub("\\[", "", $0)
 				sub("\\]:", "", $0)
 				sub("  ", " ", $0)
-				printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
+				if (($1 == "true" && match($6, "wlan")) || ($1 == "false" && $2 == $5))
+				{
+					printf "<originator_"i"><originator>"$2"</originator><link_quality>"$4"</link_quality><nexthop>"$5"</nexthop><last_seen>"$3"</last_seen><outgoing_interface>"$6"</outgoing_interface></originator_"i">"
+				}
 				i++
 			}'
 		done
