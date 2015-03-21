@@ -141,19 +141,52 @@ crawl() {
             BATMAN_ADV_INTERFACES=$BATMAN_ADV_INTERFACES"<$iface><name>$iface</name><status>$status</status></$iface>"
         done
 
-        batman_adv_originators=$(awk \
-            'BEGIN { FS=" "; i=0 }
-            /O/ { next }
-            /B/ { next }
-            {   sub("\\(", "", $0)
-                sub("\\)", "", $0)
-                sub("\\[", "", $0)
-                sub("\\]:", "", $0)
-                sub("  ", " ", $0)
-                printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
-                i++
-            }' /sys/kernel/debug/batman_adv/bat0/originators)
-        
+	batman_adv_originators=$(
+		arr=""
+		direct_vpn=false
+		while read line
+		do
+			case "$line" in
+				*mesh*)
+					direct_vpn=true
+				;;
+				*)
+					arr=$arr"$line|"
+				;;
+			esac
+		done </sys/kernel/debug/batman_adv/bat0/originators
+		OIFS=$IFS
+		IFS='|'
+		for org in $arr
+		do
+			echo $org | awk \
+			'BEGIN { FS=" "; i=0 }
+			/O/ { next }
+			/B/ { next }
+			{
+				sub("\\(", "", $0)
+				sub("\\)", "", $0)
+				sub("\\[", "", $0)
+				sub("\\]:", "", $0)
+				sub("  ", " ", $0)
+				printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
+				i++
+			}'
+		done
+	)
+#        batman_adv_originators=$(awk \
+#            'BEGIN { FS=" "; i=0 }
+#            /O/ { next }
+#            /B/ { next }
+#            {   sub("\\(", "", $0)
+#                sub("\\)", "", $0)
+#                sub("\\[", "", $0)
+#                sub("\\]:", "", $0)
+#                sub("  ", " ", $0)
+#                printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
+#                i++
+#            }' /sys/kernel/debug/batman_adv/bat0/originators)
+
 		batman_adv_gateway_mode=$(batctl gw)
 		
 		batman_adv_gateway_list=$(awk \
