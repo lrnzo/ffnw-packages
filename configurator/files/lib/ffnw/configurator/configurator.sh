@@ -13,6 +13,7 @@ if [ -f /etc/config/configurator ];then
 	SCRIPT_ERROR_LEVEL=`uci get configurator.@script[0].error_level`
 	SCRIPT_LOGFILE=`uci get configurator.@script[0].logfile`
 	SCRIPT_SYNC_HOSTNAME=`uci get configurator.@script[0].sync_hostname`
+	SCRIPT_LOCATION_SET=`uci get gluon-node-info.@location[0].share_location`
 	CRAWL_METHOD=`uci get configurator.@crawl[0].method`
 	CRAWL_ROUTER_ID=`uci get configurator.@crawl[0].router_id`
 	CRAWL_UPDATE_HASH=`uci get configurator.@crawl[0].update_hash`
@@ -149,6 +150,24 @@ autoadd_ipv6_address() {
 	fi
 }
 
+
+sync_geo_location(){
+	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 50 ]];then
+		mac=$(uci get wireless.mesh_radio0.macaddr)
+		coords="$(wget -q -O - "http://[fd74:fdaa:9dc4::1]/getcoords.php?mac=$mac")"
+		echo "$coords" | grep "[0-9]\{1,3\}\(\.[0-9]\)* [0-9]\{1,3\}\(\.[0-9]\)*"
+		if [ "$?" = "0" ]; then 
+			lat="$(echo "$coords" | cut -d' ' -f1)"
+			lon="$(echo "$coords" | cut -d' ' -f2)"
+			#echo "lon: $lon,lat: $lat"
+			uci set gluon-node-info.@location[0].latitude=$lat
+			uci set gluon-node-info.@location[0].longitude=$lon
+			uci set gluon-node-info.@location[0].share_location=1
+			uci commit gluon-node-info.@location[0]
+		fi
+	fi
+}
+
 if [ $CRAWL_METHOD == "login" ]; then
 	err "Authentification method is: username and passwort"
 elif [ $CRAWL_METHOD == "hash" ]; then
@@ -170,3 +189,9 @@ fi
 if [[ $SCRIPT_SYNC_HOSTNAME = "1" ]]; then
 	sync_hostname
 fi
+
+
+if [[ $SCRIPT_LOCATION_SET = "0" ]]; then
+	sync_geo_location
+fi
+
