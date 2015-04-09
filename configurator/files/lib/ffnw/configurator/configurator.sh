@@ -152,7 +152,7 @@ autoadd_ipv6_address() {
 
 
 sync_geo_location(){
-	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 50 ]];then
+	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 5 ]];then
 		mac=$(uci get wireless.mesh_radio0.macaddr)
 		coords="$(wget -q -O - "http://[fd74:fdaa:9dc4::1]/getcoords.php?mac=$mac")"
 		echo "$coords" | grep "[0-9]\{1,3\}\(\.[0-9]\)* [0-9]\{1,3\}\(\.[0-9]\)*"
