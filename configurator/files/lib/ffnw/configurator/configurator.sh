@@ -154,7 +154,7 @@ autoadd_ipv6_address() {
 sync_geo_location(){
 	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 5 ]];then
 		mac=$(uci get wireless.mesh_radio0.macaddr)
-		coords="$(wget -q -O - "http://[fd74:fdaa:9dc4::1]/getcoords.php?mac=$mac")"
+		coords="$(wget -q -O - "http://[${API_IPV6_ADRESS}]/getcoords.php?mac=$mac")"
 		echo "$coords" | grep "[0-9]\{1,3\}\(\.[0-9]\)* [0-9]\{1,3\}\(\.[0-9]\)*"
 		if [ "$?" = "0" ]; then 
 			lat="$(echo "$coords" | cut -d' ' -f1)"
@@ -167,6 +167,10 @@ sync_geo_location(){
 		fi
 	fi
 }
+
+if [[ $SCRIPT_LOCATION_SET = "0" ]]; then
+	sync_geo_location
+fi
 
 if [ $CRAWL_METHOD == "login" ]; then
 	err "Authentification method is: username and passwort"
@@ -189,9 +193,3 @@ fi
 if [[ $SCRIPT_SYNC_HOSTNAME = "1" ]]; then
 	sync_hostname
 fi
-
-
-if [[ $SCRIPT_LOCATION_SET = "0" ]]; then
-	sync_geo_location
-fi
-
