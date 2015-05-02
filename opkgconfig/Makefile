@@ -29,7 +29,11 @@ define Build/Compile
 endef
 
 define Package/ffnw-opkgconfig/install
-  $(INSTALL_CONF) files/opkg.conf $(1)/etc/opkg.conf
+	$(INSTALL_DIR) $(1)/lib/gluon/cron/
+	$(INSTALL_DATA) files/lib/gluon/cron/opkgconfig $(1)/lib/gluon/cron/opkgconfig
+	$(INSTALL_DIR) $(1)/lib/ffnw/opkgconfig/
+	$(INSTALL_BIN) files/lib/ffnw/opkgconfig/opkgconfig.sh $(1)/lib/ffnw/opkgconfig/
+	$(INSTALL_CONF) files/lib/ffnw/opkgconfig/opkg.conf $(1)/lib/ffnw/opkgconfig/
 endef
 
 $(eval $(call BuildPackage,ffnw-opkgconfig))
