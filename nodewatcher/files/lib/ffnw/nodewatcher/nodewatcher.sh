@@ -162,11 +162,12 @@ crawl() {
 
 		OIFS=$IFS
 		IFS='|'
+		i=0
 		for org in $arr
 		do
 			org=$direct_vpn" $org"
-			echo $org | awk \
-			'BEGIN { FS=" "; i=0 }
+			echo $org | awk -v i=$i \
+			'BEGIN { FS=" "; }
 			/O/ { next }
 			/B/ { next }
 			{
@@ -179,23 +180,14 @@ crawl() {
 				if (($1 == "true" && match($6, "wlan")) || ($1 == "false" && $2 == $5))
 				{
 					printf "<originator_"i"><originator>"$2"</originator><link_quality>"$4"</link_quality><nexthop>"$5"</nexthop><last_seen>"$3"</last_seen><outgoing_interface>"$6"</outgoing_interface></originator_"i">"
+					exit 1
 				}
-				i++
 			}'
+			if [ $? -eq 1 ]; then
+				let "i=i+1"
+			fi
 		done
 	)
-#        batman_adv_originators=$(awk \
-#            'BEGIN { FS=" "; i=0 }
-#            /O/ { next }
-#            /B/ { next }
-#            {   sub("\\(", "", $0)
-#                sub("\\)", "", $0)
-#                sub("\\[", "", $0)
-#                sub("\\]:", "", $0)
-#                sub("  ", " ", $0)
-#                printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
-#                i++
-#            }' /sys/kernel/debug/batman_adv/bat0/originators)
 
 		batman_adv_gateway_mode=$(batctl gw)
 		
