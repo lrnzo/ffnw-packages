@@ -168,9 +168,8 @@ sync_geo_location(){
 	fi
 }
 
-if [[ $SCRIPT_LOCATION_SET = "0" ]]; then
-	sync_geo_location
-fi
+
+sync_geo_location
 
 if [ $CRAWL_METHOD == "login" ]; then
 	err "Authentification method is: username and passwort"
