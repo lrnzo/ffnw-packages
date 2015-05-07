@@ -1,6 +1,5 @@
 #!/usr/bin/lua
 
-
 local fs = require('luci.fs')
 local nixio = require('nixio')
 local platform_info = require('platform_info')
@@ -9,10 +8,26 @@ local util = require('luci.util')
 
 local autoupdater_util = require('autoupdater.util')
 local autoupdater_version = require('autoupdater.version')
+local pidPath="/var/run/autoupdater.pid"
 
+if io.open(pidPath, "r") ~=nil then
+	io.stderr:write("The autoupdater is still running.\n")
+	os.exit(1)
+else
+	local pidf = io.open(pidPath, "w")
+	io.close(pidf)
+end
+
+function pid_clean()
+	if io.open(pidPath, "r") ~=nil then
+		os.remove(pidPath)
+	end
+	return 0
+end
 
 if not platform_info.get_image_name() then
   io.stderr:write("The autoupdater doesn't support this hardware model.\n")
+  pid_clean()
   os.exit(1)
 end
 
@@ -47,6 +62,7 @@ end
 
 if settings.enabled ~= '1' and not force then
   io.stderr:write('autoupdater is disabled.\n')
+  pid_clean()
   os.exit(0)
 end
 
@@ -262,6 +278,7 @@ local function autoupdate(mirror)
   -- We output the error message through stdout as stderr isn't available anymore
   io.write('Failed to call sysupgrade?\n')
   os.remove(image)
+  pid_clean()
   os.exit(1)
 end
 
@@ -271,9 +288,11 @@ local mirrors = branch.mirror
 while #mirrors > 0 do
   local mirror = table.remove(mirrors, math.random(#mirrors))
   if autoupdate(mirror) then
+    pid_clean()
     os.exit(0)
   end
 end
 
 io.stderr:write('No usable mirror found.\n')
+pid_clean()
 os.exit(1)
