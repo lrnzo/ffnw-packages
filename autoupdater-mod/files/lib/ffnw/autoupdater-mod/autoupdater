@@ -9,6 +9,7 @@ local util = require('luci.util')
 local autoupdater_util = require('autoupdater.util')
 local autoupdater_version = require('autoupdater.version')
 local pidPath="/var/run/autoupdater.pid"
+local direct_vpn= false
 
 if io.open(pidPath, "r") ~=nil then
 	io.stderr:write("The autoupdater is still running.\n")
@@ -23,6 +24,23 @@ function pid_clean()
 		os.remove(pidPath)
 	end
 	return 0
+end
+
+function wait(seconds)
+	local start = os.time()
+	repeat until os.time() > start + seconds
+end
+
+local foreach_count=1
+for originator in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
+	if foreach_count > 2  then
+		local vpn=0
+		vpn = string.find(originator, "vpn", vpn+1)
+		if vpn ~= nil then
+			direct_vpn= true
+		end
+	end
+	foreach_count = foreach_count + 1
 end
 
 if not platform_info.get_image_name() then
@@ -240,12 +258,16 @@ local function autoupdate(mirror)
 
   io.stderr:write('New version available.\n')
 
+--  if not force and math.random() >= get_probability(manifest.date, manifest.priority) then
+--    io.stderr:write('No autoupdate this time. Use -f to override.\n')
+--    return true
+--  end
 
-  if not force and math.random() >= get_probability(manifest.date, manifest.priority) then
-    io.stderr:write('No autoupdate this time. Use -f to override.\n')
-    return true
+  if direct_vpn == true then
+	wait(28800) -- Wait for 8h
+  else
+	wait(14400) -- Wait for 4h
   end
-
 
   os.execute('sync; sysctl -w vm.drop_caches=3')
   collectgarbage()
