@@ -1,5 +1,4 @@
 #!/bin/sh
-timestamp=$(date +"%s")
 # Netmon Nodewatcher (C) 2010-2014 Freifunk Oldenburg
 # License; GPL v3
 
@@ -203,6 +202,4 @@ delete_log
 #Erzeugt die statusdaten
 err "`date`: Generate actual status data"
 crawl
-timestampE=$(date +"%s")
-echo $(( $timestampE - $timestamp ))
 exit 0
