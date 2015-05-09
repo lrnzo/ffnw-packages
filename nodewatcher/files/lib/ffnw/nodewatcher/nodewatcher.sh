@@ -1,4 +1,5 @@
 #!/bin/sh
+timestamp=$(date +"%s")
 # Netmon Nodewatcher (C) 2010-2014 Freifunk Oldenburg
 # License; GPL v3
 
@@ -141,52 +142,22 @@ crawl() {
             BATMAN_ADV_INTERFACES=$BATMAN_ADV_INTERFACES"<$iface><name>$iface</name><status>$status</status></$iface>"
         done
 
-	batman_adv_originators=$(
-		arr=""
-		count="0"
-		direct_vpn="false"
-		while read line
-		do
-			if [ ! $count -eq 0 ]; then
-				case "$line" in
-					*mesh*)
-						direct_vpn="true"
-					;;
-					*)
-						arr=$arr"$line|"
-					;;
-				esac
-			fi
-			let "count=count+1"
-		done </sys/kernel/debug/batman_adv/bat0/originators
-
-		OIFS=$IFS
-		IFS='|'
-		i=0
-		for org in $arr
-		do
-			org=$direct_vpn" $org"
-			echo $org | awk -v i=$i \
-			'BEGIN { FS=" "; }
-			/O/ { next }
-			/B/ { next }
+	batman_adv_originators=$(awk \
+		'BEGIN { FS=" "; i=0 }
+		/O/ { next }
+		/B/ { next }
+		{
+			sub("\\(", "", $0)
+			sub("\\)", "", $0)
+			sub("\\[", "", $0)
+			sub("\\]:", "", $0)
+			sub("  ", " ", $0)
+			if (( $1 == $4 ))
 			{
-				sub("  ", " ", $0)
-				sub("\\(", "", $0)
-				sub("\\)", "", $0)
-				sub("\\[", "", $0)
-				sub("\\]:", "", $0)
-				sub("  ", " ", $0)
-				if (($1 == "true" && match($6, "wlan")) || ($1 == "false" && $2 == $5))
-				{
-					printf "<originator_"i"><originator>"$2"</originator><link_quality>"$4"</link_quality><nexthop>"$5"</nexthop><last_seen>"$3"</last_seen><outgoing_interface>"$6"</outgoing_interface></originator_"i">"
-					exit 1
-				}
-			}'
-			if [ $? -eq 1 ]; then
-				let "i=i+1"
-			fi
-		done
+				printf "<originator_"i"><originator>"$1"</originator><link_quality>"$3"</link_quality><nexthop>"$4"</nexthop><last_seen>"$2"</last_seen><outgoing_interface>"$5"</outgoing_interface></originator_"i">"
+				i++
+			}
+		}' /sys/kernel/debug/batman_adv/bat0/originators
 	)
 
 		batman_adv_gateway_mode=$(batctl gw)
@@ -232,5 +203,6 @@ delete_log
 #Erzeugt die statusdaten
 err "`date`: Generate actual status data"
 crawl
-
+timestampE=$(date +"%s")
+echo $(( $timestampE - $timestamp ))
 exit 0
