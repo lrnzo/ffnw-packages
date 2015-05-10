@@ -64,20 +64,6 @@ local old_version = util.trim(fs.readfile(settings.version_file) or '')
 -- the priority and even when it is disabled in uci
 local force = false
 
--- If fallback is true the updater will perform an update only if the
--- timespan given by the priority and another 24h have passed
-local fallback = false
-
-
-for _, a in ipairs(arg) do
-  if a == '-f' then
-    force = true
-  elseif a == '--fallback' then
-    fallback = true
-  end
-end
-
-
 if settings.enabled ~= '1' and not force then
   io.stderr:write('autoupdater is disabled.\n')
   pid_clean()
@@ -204,46 +190,6 @@ local function fetch_firmware(mirror, filename, output)
   return true
 end
 
-
--- Returns the computed update probability
-local function get_probability(date, priority)
-  local seconds = priority * 86400
-  local diff = os.difftime(os.time(), date)
-
-  if diff < 0 then
-    -- When the difference is negative, there are two possibilities: The manifest contains a wrong date, or our own clock is wrong.
-    -- As there isn't anything useful to do for an incorrect manifest, we'll assume the latter case and update anyways as we
-    -- can't do anything better
-    io.stderr:write('Warning: clock seems to be incorrect.\n')
-
-    if tonumber(fs.readfile('/proc/uptime'):match('^([^ ]+) ')) < 600 then
-      -- If the uptime is very low, it's possible we just didn't get the time over NTP yet, so we'll just wait until the next time the updater runs
-      return 0
-    else
-      -- Will give 1 when priority == 0, and lower probabilities the higher the priority value is
-      -- (similar to the old static probability system)
-      return 0.75^priority
-    end
-
-  elseif fallback then
-    if diff >= seconds + 86400 then
-      return 1
-    else
-      return 0
-    end
-
-  elseif diff >= seconds then
-    return 1
-
-  else
-    local x = diff/seconds
-    -- This is the most simple polynomial with value 0 at 0, 1 at 1, and whose first derivative is 0 at both 0 and 1
-    -- (we all love continuously differentiable functions, right?)
-    return (-2)*x^3 + 3*x^2
-  end
-end
-
-
 -- Tries to perform an update from a given mirror
 local function autoupdate(mirror)
   local manifest = read_manifest(mirror)
@@ -257,11 +203,6 @@ local function autoupdate(mirror)
   end
 
   io.stderr:write('New version available.\n')
-
---  if not force and math.random() >= get_probability(manifest.date, manifest.priority) then
---    io.stderr:write('No autoupdate this time. Use -f to override.\n')
---    return true
---  end
 
   if direct_vpn == true then
 	wait(28800) -- Wait for 8h
