@@ -30,7 +30,7 @@ endef
 
 define Package/ffnw-autoupdater-mod/install
 	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/* $(1)/lib/gluon/cron/
+	$(INSTALL_DATA) files/lib/gluon/cron/autoupdater-mod $(1)/lib/gluon/cron/
 	$(INSTALL_DIR) $(1)/lib/ffnw/autoupdater-mod/
 	$(INSTALL_BIN) files/lib/ffnw/autoupdater-mod/* $(1)/lib/ffnw/autoupdater-mod/
 endef

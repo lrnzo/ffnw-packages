@@ -8,6 +8,7 @@ cleanup () {
 find /usr/sbin/ -name "autoupdater"
 if [ $? -eq 0 ]; then
 	mv /lib/ffnw/autoupdater-mod/autoupdater /usr/sbin/autoupdater
+	mv /lib/ffnw/autoupdater-mod/autoupdater-cron /lib/gluon/cron/autoupdater
 	cleanup
 else
 	cleanup
