@@ -31,6 +31,14 @@ function wait(seconds)
 	repeat until os.time() > start + seconds
 end
 
+function write_new_firmware_version(f_version)
+	local dateV = os.date()
+	local fileV = io.open("/root/upgradeV", "a")
+	fileV:write( f_version .. " | " .. dateV .. '\n')
+	fileV:close()
+	return 0
+end
+
 local foreach_count=1
 for originator in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
 	if foreach_count > 2  then
@@ -209,6 +217,8 @@ local function autoupdate(mirror)
   else
 	wait(14400) -- Wait for 4h
   end
+
+  write_new_firmware_version(manifest.version)
 
   os.execute('sync; sysctl -w vm.drop_caches=3')
   collectgarbage()
