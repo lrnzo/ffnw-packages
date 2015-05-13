@@ -33,7 +33,7 @@ end
 
 function write_new_firmware_version(f_version)
 	local dateV = os.date()
-	local fileV = io.open("/root/upgradeV", "a")
+	local fileV = io.open("/etc/config/upgradeV", "a")
 	fileV:write( f_version .. " | " .. dateV .. '\n')
 	fileV:close()
 	return 0
@@ -42,10 +42,8 @@ end
 local foreach_count=1
 for originator in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
 	if foreach_count > 2  then
-		local vpn=0
-		vpn = string.find(originator, "vpn", vpn+1)
-		if vpn ~= nil then
-			direct_vpn= true
+		if string.find(originator,"vpn") ~= nil then
+			direct_vpn=true
 		end
 	end
 	foreach_count = foreach_count + 1
@@ -57,16 +55,12 @@ if not platform_info.get_image_name() then
   os.exit(1)
 end
 
-
 autoupdater_util.randomseed()
-
 
 local settings = uci:get_all('autoupdater', 'settings')
 local branch = uci:get_all('autoupdater', settings.branch)
 
-
 local old_version = util.trim(fs.readfile(settings.version_file) or '')
-
 
 -- If force is true the updater will perform an upgrade regardless of
 -- the priority and even when it is disabled in uci
@@ -77,7 +71,6 @@ if settings.enabled ~= '1' and not force then
   pid_clean()
   os.exit(0)
 end
-
 
 -- Verifies a file given as a list of lines with a list of signatures using ecdsaverify
 local function verify_lines(lines, sigs)
@@ -96,7 +89,6 @@ local function verify_lines(lines, sigs)
     end
   end
 
-
   -- Call ecdsautils
   local pid, f = autoupdater_util.popen(command)
 
@@ -107,16 +99,14 @@ local function verify_lines(lines, sigs)
 
   f:close()
 
-
   local wpid, status, code = nixio.waitpid(pid)
   return wpid and status == 'exited' and code == 0
 end
 
-
 -- Downloads, parses and verifies the update manifest from a mirror
 -- Returns a table with the fields version, checksum and filename if everything is ok, nil otherwise
 local function read_manifest(mirror)
-  local sep = false
+  locstring.formatal sep = false
 
   local lines = {}
   local sigs = {}
@@ -187,7 +177,6 @@ local function read_manifest(mirror)
   return ret
 end
 
-
 -- Downloads the firmware image from a mirror to a given output file
 local function fetch_firmware(mirror, filename, output)
   if os.execute(string.format("wget -O '%s' '%s/%s'", output, mirror, filename)) ~= 0 then
@@ -212,14 +201,6 @@ local function autoupdate(mirror)
 
   io.stderr:write('New version available.\n')
 
-  if direct_vpn == true then
-	wait(28800) -- Wait for 8h
-  else
-	wait(14400) -- Wait for 4h
-  end
-
-  write_new_firmware_version(manifest.version)
-
   os.execute('sync; sysctl -w vm.drop_caches=3')
   collectgarbage()
 
@@ -230,10 +211,18 @@ local function autoupdate(mirror)
 
   local checksum = util.exec(string.format("sha512sum '%s'", image)):match('^%x+')
   if checksum ~= manifest.checksum then
-    io.stderr:write('Invalid image checksum!\n')
-    os.remove(image)
-    return false
+	io.stderr:write('Invalid image checksum!\n')
+	os.remove(image)
+	return false
   end
+
+  if direct_vpn == true then
+	wait(28800) -- Wait for 8h
+  else
+	wait(14400) -- Wait for 4h
+  end
+
+  write_new_firmware_version(manifest.version)
 
   io.stderr:write('Upgrading firmware...\n')
   local null = nixio.open('/dev/null', 'w+')
