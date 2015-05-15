@@ -106,7 +106,7 @@ end
 -- Downloads, parses and verifies the update manifest from a mirror
 -- Returns a table with the fields version, checksum and filename if everything is ok, nil otherwise
 local function read_manifest(mirror)
-  locstring.formatal sep = false
+  local sep = false
 
   local lines = {}
   local sigs = {}
