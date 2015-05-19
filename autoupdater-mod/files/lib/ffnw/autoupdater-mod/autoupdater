@@ -10,6 +10,7 @@ local autoupdater_util = require('autoupdater.util')
 local autoupdater_version = require('autoupdater.version')
 local pidPath="/var/run/autoupdater.pid"
 local direct_vpn= false
+local mesh_lan = false
 
 if io.open(pidPath, "r") ~=nil then
 	io.stderr:write("The autoupdater is still running.\n")
@@ -31,19 +32,14 @@ function wait(seconds)
 	repeat until os.time() > start + seconds
 end
 
-function write_new_firmware_version(f_version)
-	local dateV = os.date()
-	local fileV = io.open("/etc/config/upgradeV", "a")
-	fileV:write( f_version .. " | " .. dateV .. '\n')
-	fileV:close()
-	return 0
-end
-
 local foreach_count=1
 for originator in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
 	if foreach_count > 2  then
 		if string.find(originator,"vpn") ~= nil then
 			direct_vpn=true
+		end
+		if string.find(originator,"eth") ~= nil then
+			mesh_lan = true
 		end
 	end
 	foreach_count = foreach_count + 1
@@ -218,11 +214,11 @@ local function autoupdate(mirror)
 
   if direct_vpn == true then
 	wait(28800) -- Wait for 8h
+  elseif mesh_lan == true then
+	wait(21600) -- Wait for 6h
   else
 	wait(14400) -- Wait for 4h
   end
-
-  write_new_firmware_version(manifest.version)
 
   io.stderr:write('Upgrading firmware...\n')
   local null = nixio.open('/dev/null', 'w+')
