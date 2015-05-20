@@ -5,7 +5,7 @@ cleanup () {
 	rm -rf /lib/ffnw/opkgconfig
 	}
 
-if [ -e /etc/config/fastdreg]; then
+if [ -e /etc/config/fastdreg ]; then
 	rm /etc/config/fastdreg
 fi
 
