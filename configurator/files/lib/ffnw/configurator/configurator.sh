@@ -154,7 +154,7 @@ autoadd_ipv6_address() {
 sync_geo_location(){
 	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 5 ]];then
 		mac=$(uci get wireless.mesh_radio0.macaddr)
-		coords="$(wget -q -O - "http://[${API_IPV6_ADRESS}]/getcoords.php?mac=$mac")"
+		coords="$(wget -q -O - "http://${API_IPV6_ADRESS}/getcoords.php?mac=$mac")"
 		echo "$coords" | grep "[0-9]\{1,3\}\(\.[0-9]\)* [0-9]\{1,3\}\(\.[0-9]\)*"
 		if [ "$?" = "0" ]; then 
 			lat="$(echo "$coords" | cut -d' ' -f1)"
