@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libwlocate
-PKG_VERSION:=1.1
+PKG_VERSION:=1.2
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://dev.freifunk-ol.de/packages
-PKG_MD5SUM:=5f8be7c6e95b64f24dd8cde4557612a4
+PKG_MD5SUM:=db450fcdf3d1d1f0c85f07bece523c0c
 
 include $(INCLUDE_DIR)/package.mk
 
