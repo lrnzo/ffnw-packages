@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lwtrace
-PKG_VERSION:=1.1
+PKG_VERSION:=1.2
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://dev.freifunk-ol.de/packages
-PKG_MD5SUM:=bbe4e339daf69efe0b6c325f799c3e0b
+PKG_MD5SUM:=f022188c5b544d52bd3986e3a74be3b5
 
 include $(INCLUDE_DIR)/package.mk
 
