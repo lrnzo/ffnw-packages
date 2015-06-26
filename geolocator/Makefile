@@ -1,21 +1,21 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=ffnw-nodewatcher
-PKG_VERSION:=30
+PKG_NAME:=ffnw-geolocator
+PKG_VERSION:=1
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ffnw-nodewatcher
+define Package/ffnw-geolocator
   SECTION:=daemon
   CATEGORY:=Freifunk Nordwest
-  TITLE:=Provides status data for netmon 
+  TITLE:=Sed geoposition for alfred
 endef
 
-define Package/ffnw-nodewatcher/description
-	Provides status data for netmon
+define Package/ffnw-geolocator/description
+	Sed geoposition for alfred
 endef
 
 define Build/Prepare
@@ -28,13 +28,13 @@ endef
 define Build/Compile
 endef
 
-define Package/ffnw-nodewatcher/install
+define Package/ffnw-geolocator/install
 	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/nodewatcher $(1)/lib/gluon/cron/nodewatcher
-	$(INSTALL_DIR) $(1)/lib/ffnw/nodewatcher/
-	$(INSTALL_BIN) files/lib/ffnw/nodewatcher/nodewatcher.sh $(1)/lib/ffnw/nodewatcher/
+	$(INSTALL_DATA) files/lib/gluon/cron/geolocator $(1)/lib/gluon/cron/geolocator
+	$(INSTALL_DIR) $(1)/lib/ffnw/geolocator/
+	$(INSTALL_BIN) files/lib/ffnw/geolocator/geolocator.sh $(1)/lib/ffnw/geolocator/
 	$(INSTALL_DIR) $(1)/etc/config/
-	$(INSTALL_CONF) files/nodewatcher.config $(1)/etc/config/nodewatcher
+	$(INSTALL_CONF) files/geolocator.config $(1)/etc/config/geolocator
 endef
 
-$(eval $(call BuildPackage,ffnw-nodewatcher))
+$(eval $(call BuildPackage,ffnw-geolocator))
