@@ -1,0 +1,15 @@
+=== Geolocator ===
+
+The package Geolocator is a combination of some programs and tools. The main function of this package is to get or sed geocoordinations (latditude and longditude) This Package has also an another major feature its is able to triangulate the router location via wifi.
+
+=== Install introduction: ===
+
+Arch:
+
+{ sh | yaourt -S smath }
+
+smath is a program to worke with mathematical functions.
+
+=== Parameters discription ===
+
+
