@@ -1,7 +1,7 @@
 #!/bin/sh
 
-SHARE_LOCATION=`uci get gluon-node-info.@location[0].share_location`
-if [ ! $SHARE_LOCATION ]; then
+AUTO_LOCATION=`uci get gluon-node-info.@location[0].auto_location`
+if [ $AUTO_LOCATION -eq 0 ]; then
 	exit 0
 fi
 
@@ -23,7 +23,7 @@ Clean_pid() {
 }
 
 # Get localization interval
-INTERVAL=`uci get gluon-node-info.@location[0].interval`
+INTERVAL=`uci get gluon-node-info.@location[0].refresh_interval`
 
 # get position
 Get_geolocation_info() {
@@ -52,20 +52,18 @@ Get_geolocation_info() {
 }
 
 #check if interval over or not exist
-if [ ! -f $TIME_STAMP ] && [ $(( date +%s - cat $TIME_STAMP )) >= $(( $INTERVAL * 60 )) ]; then
+if [ ! -f $TIME_STAMP ] || [ $(( `date +%s` - `cat $TIME_STAMP` )) -gt $(( $INTERVAL * 60 )) ]; then
 	Get_geolocation_info
 	if [ $? -eq 1 ]; then
 		Clean_pid
 	fi
 	#ceck if static location true or not
-	STATIC_LOCATION=`uci get gluon-node-info.@location[0].static_location`
-	if [ $STATIC_LOCATION ]; then
-		STATIC_LAT=`uci get gluon-node-info.@location[0].latitude`
-		if [ -z $STATIC_LAT ]; then
-			`uci set gluon-node-info.@location[0].latitude $LAT`
-			`uci set gluon-node-info.@location[0].longitude $LON`
-		fi
+	MOBILE_LOCATION=`uci get gluon-node-info.@location[0].mobile_location`
+	if [ $MOBILE_LOCATION -eq 1 ]; then
+		$(uci set gluon-node-info.@location[0].latitude=$LAT)
+		$(uci set gluon-node-info.@location[0].longitude=$LON)
+		`uci commit gluon-node-info`
 	fi
-	date +%s >> $TIME_STAMP
+	date +%s > $TIME_STAMP
 fi
 Clean_pid
