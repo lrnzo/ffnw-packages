@@ -42,8 +42,14 @@ crawl() {
 	#Get system data from other locations
     err "`date`: Collecting basic system status data"
     hostname="$(cat /proc/sys/kernel/hostname)"
-	uptime=$(awk '{ printf "<uptime>"$1"</uptime><idletime>"$2"</idletime>" }' /proc/uptime)
+    uptime=$(awk '{ printf "<uptime>"$1"</uptime><idletime>"$2"</idletime>" }' /proc/uptime)
 	
+    if [ $(uci get gluon-node-info.@location[0].share_location) = "1" ]
+    then
+       position="<position><lon>$(uci get gluon-node-info.@location[0].longitude)</lon><lat>$(uci get gluon-node-info.@location[0].latitude)</lat></position>"
+    fi
+
+
     memory=$(awk '
         /^MemTotal/ { printf "<memory_total>"$2"</memory_total>" }
         /^Cached:/ { printf "<memory_caching>"$2"</memory_caching>" }
@@ -68,7 +74,7 @@ crawl() {
 	distversion="$(cat /lib/gluon/gluon-version)"
 
 	FIRMWARE_VERSION="$(cat /lib/gluon/release)"
-	SYSTEM_DATA="<status>online</status><hostname>$hostname</hostname><distname>$distname</distname><distversion>$distversion</distversion>$cpu$memory$load$uptime<local_time>$local_time</local_time><batman_advanced_version>$batman_adv_version</batman_advanced_version><kernel_version>$kernel_version</kernel_version><fastd_version>$fastd_version</fastd_version><nodewatcher_version>$nodewatcher_version</nodewatcher_version><firmware_version>$FIRMWARE_VERSION</firmware_version><firmware_revision>$FIRMWARE_REVISION</firmware_revision><openwrt_core_revision>$OPENWRT_CORE_REVISION</openwrt_core_revision><openwrt_feeds_packages_revision>$OPENWRT_FEEDS_PACKAGES_REVISION</openwrt_feeds_packages_revision>"
+	SYSTEM_DATA="<status>online</status><hostname>$hostname</hostname>$position<distname>$distname</distname><distversion>$distversion</distversion>$cpu$memory$load$uptime<local_time>$local_time</local_time><batman_advanced_version>$batman_adv_version</batman_advanced_version><kernel_version>$kernel_version</kernel_version><fastd_version>$fastd_version</fastd_version><nodewatcher_version>$nodewatcher_version</nodewatcher_version><firmware_version>$FIRMWARE_VERSION</firmware_version><firmware_revision>$FIRMWARE_REVISION</firmware_revision><openwrt_core_revision>$OPENWRT_CORE_REVISION</openwrt_core_revision><openwrt_feeds_packages_revision>$OPENWRT_FEEDS_PACKAGES_REVISION</openwrt_feeds_packages_revision>"
 
 	err "`date`: Collecting information from network interfaces"
 
