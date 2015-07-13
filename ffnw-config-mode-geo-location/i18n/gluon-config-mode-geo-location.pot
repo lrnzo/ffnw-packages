@@ -2,9 +2,18 @@ msgid ""
 msgstr "Content-Type: text/plain; charset=UTF-8"
 
 msgid ""
-"If you want the location of your node to be displayed on the map, you can "
+"If you want the location of your node to be displayed on the map, you can a automatically localization of your router or "
 "enter its coordinates here. Specifying the altitude is optional and should "
 "only be done if a proper value is known."
+msgstr ""
+
+msgid "Enable automatic localization via wifi"
+msgstr ""
+
+msgid "Interval in minutes"
+msgstr ""
+
+msgid "Set locationmaunaly"
 msgstr ""
 
 msgid "Latitude"
@@ -14,9 +23,6 @@ msgid "Longitude"
 msgstr ""
 
 msgid "Altitude"
-msgstr ""
-
-msgid "Show node on the map"
 msgstr ""
 
 msgid "e.g. %s"
