@@ -1,0 +1,19 @@
+#!/usr/bin/lua
+
+local site = require 'gluon.site_config'
+local uci = require('luci.model.uci').cursor()
+
+local config = 'gluon-node-info'
+local autolocation = uci:get(config, uci:get_first(config, 'location'), 'auto_location')
+
+if site.location then
+  default_autolocation = site.location.autolocation
+else
+  default_autolocation = autolocation
+end
+
+if autolocation == 0 then
+  uci:set(config, uci:get_first(config, 'location'), 'auto_location', default_autolocation)
+  uci:save(config)
+  uci:commit(config)
+end
