@@ -12,7 +12,7 @@ define Package/ffnw-node-info
   SECTION:=daemon
   CATEGORY:=Freifunk Nordwest
   TITLE:=Sed node infos for alfred
-  DEPENDS:=+lwtrace
+  DEPENDS:=+lwtrace +libwlocate +gluon-core
 endef
 
 define Package/ffnw-node-info/description
