@@ -1,7 +1,7 @@
 config location
 	option auto_location '1'
 	option refresh_interval '1440'
-	option mobile_location '1'
+	option static_location '0'
 	option share_location '0'
 
 config owner
