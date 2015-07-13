@@ -30,19 +30,19 @@ Get_geolocation_info() {
 	LWTRACE=`lwtrace -t 2> /dev/null`
 	echo $LWTRACE | grep "Scan completed : Your location:" >> /dev/null
 	if [ $? -eq "0" ]; then
-		last_arr_val="";
+		last_val="";
 		for x in $LWTRACE
 		do
 			if [ $x == '(lat)' ]; then
-				LAT=$last_arr_val;
+				LAT=$last_val;
 			fi
 			if [ $x == '(lon)' ]; then
-				LON=$last_arr_val;
+				LON=$last_val;
 			fi
 			if [ $x == '%' ]; then
-				QUALITY=$last_arr_val;
+				QUALITY=$last_val;
 			fi
-			last_arr_val=$x;
+			last_val=$x;
 		done
 		return 0
 	else
@@ -58,8 +58,12 @@ if [ ! -f $TIME_STAMP ] || [ $(( `date +%s` - `cat $TIME_STAMP` )) -gt $(( $INTE
 		Clean_pid
 	fi
 	#ceck if static location true or not
-	MOBILE_LOCATION=`uci get gluon-node-info.@location[0].mobile_location`
-	if [ $MOBILE_LOCATION -eq 1 ]; then
+	STATIC_LOCATION=`uci get gluon-node-info.@location[0].static_location`
+	if [ $STATIC_LOCATION -eq 0 ]; then
+		SHARE_LOCATION=`uci get gluon-node-info.@location[0].share_location`
+		if [ $SHARE_LOCATION -eq 0 ] then
+			$(uci set gluon-node-info.@location[0].share_location=1)
+		fi
 		$(uci set gluon-node-info.@location[0].latitude=$LAT)
 		$(uci set gluon-node-info.@location[0].longitude=$LON)
 		`uci commit gluon-node-info`
