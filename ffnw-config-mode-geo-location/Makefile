@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=gluon-config-mode-geo-location
+PKG_NAME:=ffnw-config-mode-geo-location
 PKG_VERSION:=1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
@@ -10,11 +10,11 @@ include $(GLUONDIR)/include/package.mk
 PKG_CONFIG_DEPENDS += $(GLUON_I18N_CONFIG)
 
 
-define Package/gluon-config-mode-geo-location
-  SECTION:=gluon
-  CATEGORY:=Gluon
+define Package/ffnw-config-mode-geo-location
+  SECTION:=config-mode
+  CATEGORY:=Freifunk Nordwest
   TITLE:=Set geographic location of a node
-  DEPENDS:=gluon-config-mode-core-virtual +gluon-node-info +ffnw-node-info +lwtrace +libwlocate
+  DEPENDS:=gluon-config-mode-core-virtual +ffnw-node-info +lwtrace +libwlocate
 endef
 
 define Build/Prepare
@@ -25,12 +25,12 @@ define Build/Configure
 endef
 
 define Build/Compile
-	$(call GluonBuildI18N,gluon-config-mode-geo-location,i18n)
+	$(call GluonBuildI18N,ffnw-config-mode-geo-location,i18n)
 endef
 
-define Package/gluon-config-mode-geo-location/install
+define Package/ffnw-config-mode-geo-location/install
 	$(CP) ./files/* $(1)/
-	$(call GluonInstallI18N,gluon-config-mode-geo-location,$(1))
+	$(call GluonInstallI18N,ffnw-config-mode-geo-location,$(1))
 endef
 
-$(eval $(call BuildPackage,gluon-config-mode-geo-location))
+$(eval $(call BuildPackage,ffnw-config-mode-geo-location))
