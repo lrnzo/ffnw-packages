@@ -61,7 +61,7 @@ if [ ! -f $TIME_STAMP ] || [ $(( `date +%s` - `cat $TIME_STAMP` )) -gt $(( $INTE
 	STATIC_LOCATION=`uci get gluon-node-info.@location[0].static_location`
 	if [ $STATIC_LOCATION -eq 0 ]; then
 		SHARE_LOCATION=`uci get gluon-node-info.@location[0].share_location`
-		if [ $SHARE_LOCATION -eq 0 ] then
+		if [ $SHARE_LOCATION -eq 0 ]; then
 			$(uci set gluon-node-info.@location[0].share_location=1)
 		fi
 		$(uci set gluon-node-info.@location[0].latitude=$LAT)
