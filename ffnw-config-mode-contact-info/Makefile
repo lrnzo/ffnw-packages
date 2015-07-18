@@ -11,8 +11,8 @@ PKG_CONFIG_DEPENDS += $(GLUON_I18N_CONFIG)
 
 
 define Package/ffnw-config-mode-contact-info
-  SECTION:=gluon
-  CATEGORY:=Gluon
+  SECTION:=config-mode
+  CATEGORY:=Freifunk Nordwest
   TITLE:=Set a custom string that will be distributed in the mesh.
   DEPENDS:=gluon-config-mode-core-virtual +ffnw-node-info
 endef
