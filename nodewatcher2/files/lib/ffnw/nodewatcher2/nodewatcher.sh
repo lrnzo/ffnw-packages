@@ -44,17 +44,20 @@ for filename in `grep 'up\|unknown' /sys/class/net/*/operstate`; do
 	eval interface${ifc}_mtu=$(echo \"$addrs\" | grep -E "mtu"|sed -r "s/.* mtu ([0-9]+) .*/\1/")
 	eval interface${ifc}_mac=$(echo \"$addrs\" | grep -E "link/ether"|sed -r "s/.* link\/ether ([0-9a-f:]+) .*/\1/")
 
-	eval "interface${ifc}_traffic_rx"=$(cat "$ifpath/statistics/rx_bytes")
-	eval interface${ifc}_traffic_tx=$(cat "$ifpath/statistics/tx_bytes")
-  	eval interface${ifc}_ipv4=$(echo -e \"$addrs\" | grep -E "inet "|sed -r "s/.* inet ([0-9.]+)(\/[0-9]+)? .*/\1/")
-	local ipv6_adresses="$(echo "$addrs" | grep -E 'inet6 ' |sed -r 's/[[:space:]]*inet6 (([0-9a-f:]+)(\/[0-9]*)?) .*/\2/')"
+	eval "interface${ifc}_traffic_rx=\"$(cat $ifpath/statistics/rx_bytes)\""
+	eval "interface${ifc}_traffic_tx=\"$(cat $ifpath/statistics/tx_bytes)\""
+#	echo -e $addrs | grep -E 'inet '|sed -r 's/.* inet ([0-9.]+)(\/[0-9]+)? .*/\1/'
+  	eval "interface${ifc}_ipv4=\"$(echo -e \"$addrs\" | grep -E 'inet '|sed -r 's/.* inet ([0-9.]+)(\/[0-9]+)? .*/\1/')\""
+#	eval "echo \"ip: \$interface${ifc}_ipv4\""
+	local ipv6_adresses=$(echo "$addrs" | grep -E 'inet6 ' |sed -r 's/[[:space:]]*inet6 (([0-9a-f:]+)(\/[0-9]*)?) .*/\2/')
 	local ipc=0
-
+#	echo $ipv6_adresses
 	for ip in $ipv6_adresses ;do
-		eval interface${ifc}_ipv6_${ipc}=\"$ip\" 
+		echo "--"$ip
+		eval "interface${ifc}_ipv6_${ipc}=\"$ip\""
 		ipc=$(($ipc+1)) 
 	done
-	eval interface${ifc}_ipv6count=$ipc 
+	eval "interface${ifc}_ipv6count=$ipc"
 	
 
 	if [ "$iface" != "bat0" ] ; then
@@ -180,16 +183,19 @@ for i in $(seq 0 $(($ifc-1))) ; do
 		eval "out=\"\${out}\t\t\t<meshstatus>\${interface${i}_meshstatus}</meshstatus>\n\""
 	fi
 
-	eval "local ipv4=\${interface${i}_ipv4}" 
+	eval "local ipv4=\"\${interface${i}_ipv4}\"" 
+#	echo "ip4: $ipv4"
 	if [ "$ipv4" != "" ]; then
 		out=$out"\t\t\t<ipv4>$ipv4</ipv4>\n" 
 	fi
 
-	if eval "[ \"\${interface${i}_ipv6count}\" != \"0\"  ]"
-	then
-	        for ip in $(seq 0 $(($limit-1))) ; do
+
+	eval "ic=\${interface${i}_ipv6count}"
+
+	if [ "$ic" != "0" ] ; then
+	        for ip in $(seq 0 $(($ic-1))) ; do
         	       	eval "out=\"$out\t\t\t<ipv6>\${interface${i}_ipv6_${ip}}</ipv6>\n\""                                                                                                       
-        	       	#echo "hi"
+#        	       	echo "hi$ip"
 			#eval interface${ifc}_ipv6_$ip=$ip                                                                             
         	done    
 	fi
