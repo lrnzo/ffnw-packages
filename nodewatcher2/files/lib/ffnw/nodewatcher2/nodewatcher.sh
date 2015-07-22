@@ -75,22 +75,25 @@ for filename in `grep 'up\|unknown' /sys/class/net/*/operstate`; do
 done
 
 orc=0
-origs=$(batctl o|tail -n +3|tail -n 10)
+origs="$(batctl o|sed -r 's/([0-9a-f:]+)[[:space:]]+([0-9.]+)s[[:space:]]+\([[:space:]]*([0-9]{1,3})\)[[:space:]]+([0-9a-f:]+)[[:space:]]+\[[[:space:]]*(.+)\]:.*/\1 \2 \3 \4 \5/;tx;d;:x')"
 
 OIFS="$IFS"
 NIFS=$'\n'
 IFS="${NIFS}"
-for orig in $(batctl o|tail -n +3|tail -n 10) ; do
+#echo "$origs"
+for orig in $origs ; do
 	IFS="${OIFS}"
-	orig="$(echo "$orig"|sed -r 's/([0-9a-f:]+)[[:space:]]+([0-9.]+)s[[:space:]]+\([[:space:]]*([0-9]{1,3})\)[[:space:]]+([0-9a-f:]+)[[:space:]]+\[[[:space:]]*(.+)\]:.*/\1 \2 \3 \4/')"
 	set -- $orig
 	eval "originator${orc}_mac=\"$1\""
 	eval "originator${orc}_linkquality=\"$3\""
 	eval "originator${orc}_lastseen=\"$2\""
 	eval "originator${orc}_nexthop=\"$4\""
 	eval "originator${orc}_interface=\"$5\""
-	if eval "[ \"\${originator${orc}_mac}\" == \"\${originator${orc}_mac}\" ]"
+
+ 	if eval "[ \"\${originator${orc}_mac}\" != \"\${originator${orc}_nexthop}\" -o \"\${originator${orc}_interface}\" == \"mesh-vpn\" ]"
 	then
+	#	eval "echo \"\$originator${orc}_mac  --    \$originator${orc}_nexthop\"" 
+	#	echo "skipped"
 		continue
 	fi
 	orc=$(($orc+1))
@@ -98,12 +101,13 @@ for orig in $(batctl o|tail -n +3|tail -n 10) ; do
 done
 IFS="${OIFS}"
 
-#=> 5a:94:dc:c8:bb:08 (246) 5a:94:dc:c8:bb:08 [  mesh-vpn]: 1000.0/1000.0 MBit
 gwc=0
+gws="$(batctl gwl|sed -r 's/^[[:space:]]+([a-f0-9:].*)/false \1/ ; s/^=>(.*)/true \1/ ; s/(true|false)[[:space:]]+([0-9a-f:]+)[[:space:]]+\([[:space:]]*([0-9]+)\)[[:space:]]+[a-f0-9:]+[[:space:]]+\[[[:space:]]*(.+)\]:[[:space:]]+([0-9.\/]+).*$/\1 \2 \3 \4 \5/;tx;d;:x')" 
+#echo "$gws"
 IFS="${NIFS}"
-for gw in $(batctl gwl | tail -n +2) ; do
+for gw in $gws ; do
 	IFS=${OIFS} 
-	gw="$(echo "$gw"|sed -r 's/^[[:space:]]+(.*)/false \1/ ; s/^=>(.*)/true \1/ ; s/(true|false)[[:space:]]+([0-9a-f:]+)[[:space:]]+\([[:space:]]*([0-9]+)\)[[:space:]]+[a-f0-9:]+[[:space:]]+\[[[:space:]]*(.+)\]:[[:space:]]+([0-9.\/]+).*$/\1 \2 \3 \4 \5/')" 
+#	gw="$(echo "$gw"|sed -r 's/^[[:space:]]+(.*)/false \1/ ; s/^=>(.*)/true \1/ ; s/(true|false)[[:space:]]+([0-9a-f:]+)[[:space:]]+\([[:space:]]*([0-9]+)\)[[:space:]]+[a-f0-9:]+[[:space:]]+\[[[:space:]]*(.+)\]:[[:space:]]+([0-9.\/]+).*$/\1 \2 \3 \4 \5/;tx;d;:x')" 
 #	echo "$gw"
 	set -- $gw
 #	echo "sel: $1"	
