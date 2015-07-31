@@ -249,3 +249,6 @@ out="$out</data>"
 
 
 echo -e "$out" > "/tmp/node2data.xml"
+if [ ! -h /lib/gluon/status-page/www/node2data.xml ]; then
+        ln -s /tmp/node2data.xml /lib/gluon/status-page/www/node2data.xml
+fi
