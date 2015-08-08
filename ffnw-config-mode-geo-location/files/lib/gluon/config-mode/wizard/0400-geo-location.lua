@@ -7,7 +7,7 @@ local M = {}
 function M.section(form)
   local s = form:section(cbi.SimpleSection, nil, i18n.translate(
     'If you want the location of your node to be displayed on the map, '
-      .. 'you can sed a automatically localization of your router or enter its coordinates here. Specifying the altitude '
+      .. 'you can set a automatic localization of your router or enter its coordinates here. Specifying the altitude '
       .. 'is optional and should only be done if a proper value is known.'))
 
   local o
@@ -21,9 +21,9 @@ function M.section(form)
   o:depends("_autolocation", "1")
   o.rmempty = false
   o.datatype = "integer"
-  o.description = i18n.translatef("sed refresh interval, the default is ons a day")
+  o.description = i18n.translatef("Set refresh interval, the default is once per day")
 
-  o = s:option(cbi.Flag, "_staticlocation", i18n.translate("Set location maunaly"))
+  o = s:option(cbi.Flag, "_staticlocation", i18n.translate("Set location manually"))
   o.default = uci:get_first("gluon-node-info", "location", "static_location", o.disabled)
   o.rmempty = false
 
