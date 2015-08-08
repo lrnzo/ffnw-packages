@@ -3,17 +3,6 @@
 local site = require 'gluon.site_config'
 local uci = require('luci.model.uci').cursor()
 
-local config = 'gluon-node-info'
-local interval = uci:get(config, uci:get_first(config, 'location'), 'refresh_interval')
-
-if site.location then
-  default_interval = site.location.interval
-else
-  default_interval = interval
-end
-
-if autolocation == 0 then
-  uci:set(config, uci:get_first(config, 'location'), 'refresh_interval', default_interval)
-  uci:save(config)
-  uci:commit(config)
-end
+  uci:set('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'refresh_interval', site.location.interval)
+  uci:save('gluon-node-info')
+  uci:commit('gluon-node-info')
