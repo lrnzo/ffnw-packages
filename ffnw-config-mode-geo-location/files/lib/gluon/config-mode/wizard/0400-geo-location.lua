@@ -55,14 +55,14 @@ function M.handle(data)
   uci:set("gluon-node-info", sname, "auto_location", data._autolocation)
   uci:set("gluon-node-info", sname, "static_location", data._staticlocation)
 
-  if data._autolocation == '1' then
-    if data._interval ~= nil and data._interval >= '1' and data._interval <= '43200' then
+  if tonumber(data._autolocation) == 1 then
+    if data._interval ~= nil and tonumber(data._interval) >= 1 and tonumber(data._interval) <= 43200 then
       uci:set("gluon-node-info", sname, "refresh_interval", data._interval)
-    elseif data._interval > '43200' then
+    elseif tonumber(data._interval) > 43200 then
       uci:set("gluon-node-info", sname, "refresh_interval", 43200)
     end
   end
-  if data._staticlocation == '1' and data._latitude ~= nil and data._longitude ~= nil then
+  if tonumber(data._staticlocation) == 1 and data._latitude ~= nil and data._longitude ~= nil then
     uci:set("gluon-node-info", sname, "share_location", data._staticlocation)
     uci:set("gluon-node-info", sname, "latitude", data._latitude)
     uci:set("gluon-node-info", sname, "longitude", data._longitude)
