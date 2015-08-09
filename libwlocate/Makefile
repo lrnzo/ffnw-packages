@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://dev.freifunk-ol.de/packages
+PKG_SOURCE_URL:=http://dev.ffnw.de/packages
 PKG_MD5SUM:=db450fcdf3d1d1f0c85f07bece523c0c
 
 include $(INCLUDE_DIR)/package.mk
