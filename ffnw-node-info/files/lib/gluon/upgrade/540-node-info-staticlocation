@@ -1,0 +1,20 @@
+#!/usr/bin/lua
+
+local site = require 'gluon.site_config'
+local uci = require('luci.model.uci').cursor()
+local config = 'gluon-node-info'
+local longitude = uci:get(config, uci:get_first(config, 'location'), 'longitude')
+local latitude = uci:get(config, uci:get_first(config, 'location'), 'latitude')
+local staticlocation = uci:get(config, uci:get_first(config, 'location'), 'static_location')
+
+if tonumber(longitude) ~= nil and tonumber(latitude) ~= nil then
+  default_static_location = 1
+else
+  default_static_location = 0
+end
+
+if not staticlocation then
+  uci:set(config, uci:get_first(config, 'location'), 'static_location', default_static_location)
+  uci:save(config)
+  uci:commit(config)
+end
