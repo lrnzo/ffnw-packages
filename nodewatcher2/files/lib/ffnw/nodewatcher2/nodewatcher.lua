@@ -9,6 +9,7 @@ local uci = require("uci").cursor()
 
 data ={}
 
+
 function file_exists(name)
    local f=io.open(name,"r")
    if f~=nil then io.close(f) return true else return false end
@@ -44,6 +45,56 @@ function xmlEncode(tbl,name,layer)
     end
     out=out.."</"..name..">\n"
     return out
+end
+
+
+function writeToFile(string,filename)
+    local path=uci:get("nodewatcher2","prefs","destination_folder")
+    if path == nil then
+        return
+    end
+    os.execute('if [[ ! -d "'..path..'" ]] ; then mkdir -p "'..path..'" ; fi')
+    os.execute('if [[ ! -h /lib/gluon/status-page/www/nodedata ]] ; then ln -s '..path..' /lib/gluon/status-page/www/nodedata ; fi')
+    path=path.."/"..filename
+    local file = io.open(path, "w")
+    file:write(string)
+    file:close()
+    if uci:get("nodewatcher2","prefs","enable_gzip") == "1" then
+        os.execute("echo '"..string.."' |gzip > "..path..".gz") 
+    end
+end
+
+function removeFile(filename)
+    local path=uci:get("nodewatcher2","prefs","destination_folder")
+    if path == nil then
+        return
+    end
+    path=path.."/"..filename
+    os.remove(path)
+    if uci:get("nodewatcher2","prefs","enable_gzip") == "1" then
+        os.remove(path..".gz")
+    end
+end
+
+
+function generateXml()
+    local path="nodedata.xml"
+    if uci:get("nodewatcher2","prefs","generate_xml") == "1" then
+        local string=xmlEncode(data,"data",1)
+        writeToFile(string,path)
+    else
+        removeFile(path)
+    end
+end
+
+function generateJson()
+    local path="nodedata.json"
+    if uci:get("nodewatcher2","prefs","generate_json") == "1" then
+        local string=json.encode (data, { indent = true })
+        writeToFile(string,path)
+    else
+        removeFile(path)    
+    end
 end
 
 function linesToTable(lines)
@@ -244,39 +295,7 @@ fetchOriginators()
 fetchInterfaces()
 fetchGateways()
 
-local jsonString=json.encode (data, { indent = true })
 
-
-function writeToFile(string,filename)
-    local path=uci:get("nodewatcher2","prefs","destination_folder")
-    if path == nil then
-        return
-    end
-    os.execute('if [[ ! -d "'..path..'" ]] ; then mkdir -p "'..path..'" ; fi')
-    os.execute('if [[ ! -h /lib/gluon/status-page/www/nodedata ]] ; then ln -s '..path..' /lib/gluon/status-page/www/nodedata ; fi')
-    path=path.."/"..filename
-    local file = io.open(path, "w")
-    file:write(string)
-    file:close()
-    if uci:get("nodewatcher2","prefs","enable_gzip") == "1" then
-        os.execute("echo '"..string.."' |gzip > "..path..".gz") 
-    end
-end
-
-function generateXml()
-    if uci:get("nodewatcher2","prefs","generate_xml") == "1" then
-        local string=xmlEncode(data,"data",1)
-        writeToFile(string,"nodedata.xml")
-    end
-end
-
-function generateJson()
-    if uci:get("nodewatcher2","prefs","generate_json") == "1" then
-        local string=json.encode (data, { indent = true })
-        writeToFile(string,"nodedata.json")
-        
-    end
-end
 
 generateXml()
 
