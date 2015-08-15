@@ -1,1 +1,1 @@
-* * * * *	sh /lib/ffnw/geolocator/geolocator.sh;
+*/5 * * * *	sh /lib/ffnw/geolocator/geolocator.sh;
