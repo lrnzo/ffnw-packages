@@ -1,3 +1,3 @@
 need_string('roles.default', false)
-need_string('location.autolocation', true)
-nedd_string('location.interval', true)
+need_number('location.autolocation', false)
+need_number('location.interval', false)
