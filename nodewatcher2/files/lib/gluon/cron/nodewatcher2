@@ -1,1 +1,1 @@
-*/5 * * * *	sh /lib/ffnw/nodewatcher2/nodewatcher.sh;
+*/5 * * * *	sh /lib/ffnw/nodewatcher2/nodewatcher.lua;
