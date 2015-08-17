@@ -395,13 +395,8 @@ fetchSoftware()
 fetchOriginators()
 fetchInterfaces()
 fetchGateways()
-data.asdfff={}
 
-
+-- do the output
 generateXml()
-
 generateJson()
-
 generateNodewatcherCompat()
-
-
