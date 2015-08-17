@@ -17,6 +17,7 @@ end
 
 local function isArray(t)
   local i = 0
+  if type(t) ~= "table" then return false end
   for _ in pairs(t) do
       i = i + 1
       if t[i] == nil then return false end
@@ -27,23 +28,26 @@ end
 function xmlEncode(tbl,name,layer)
     local out=""
     if layer==1 then out=out.."<?xml version='1.0' ?>\n" end
-    for i=1,layer do out=out..'\t' end
-    out=out.."<"..name..">"
-    if type(tbl)=="table" then
-
-        out=out..'\n'
-        local akey=nil
-        if isArray(tbl) then
-            akey=name:sub(0,-2)
-        end	
-        for k,v in pairs(tbl) do
-            out=out..(xmlEncode(v,akey or k,layer+1))
+    
+    if isArray(tbl) then
+	for k,v in pairs(tbl) do 
+	    out=out..(xmlEncode(v,name,layer)) 
+	end
+    else 
+    	for i=1,layer do out=out..'\t' end
+	out=out.."<"..name..">"
+        if type(tbl)=="table" then
+            out=out..'\n'
+            for k,v in pairs(tbl) do
+                out=out..(xmlEncode(v,k,layer+1))
+            end
+            for i=1,layer do out=out..'\t' end
+     
+    	else
+            out=out..(tostring(tbl))
         end
-        for i=1,layer do out=out..'\t' end
-    else
-        out=out..(tostring(tbl))
+        out=out.."</"..name..">\n"
     end
-    out=out.."</"..name..">\n"
     return out
 end
 
@@ -97,6 +101,88 @@ function generateJson()
     end
 end
 
+
+-- deprecated only for keeping netmon compat
+function generateNodewatcherCompat()
+    local comTbl={};
+    local path="nodedataCompat.xml" 
+    if uci:get("nodewatcher2","prefs","generate_nodewatcher_compat") == "1" then                                                                                                                     
+	comTbl.system_data={}
+	comTbl.system_data.status="online"
+	comTbl.system_data.hostname=data.hostname
+        comTbl.system_data.position=data.position
+	comTbl.system_data.distname="gluon"
+	comTbl.system_data.distversion=data.software.firmware
+	comTbl.system_data.cpu="-"
+	comTbl.system_data.chipset=data.model
+	comTbl.system_data.memory_free=data.memory.free
+	comTbl.system_data.memory_total=data.memory.total
+	comTbl.system_data.memory_caching=data.memory.cache
+	comTbl.system_data.memory_buffering=data.memory.buffer
+	comTbl.system_data.firmware_version=data.software.firmware
+	comTbl.system_data.fastd_version=data.software.vpn
+	comTbl.system_data.batman_advanced_version=data.software.mesh
+	comTbl.system_data.kernel_version=data.software.kernel
+	comTbl.system_data.uptime=data.times.up
+	comTbl.system_data.idletime=data.times.idle
+	comTbl.system_data.processes=data.processes.runnable.."/"..data.processes.total
+	comTbl.system_data.loadavg=data.processes.loadavg
+	if data.interfaces~=nil then
+	    comTbl.interface_data={}
+	    for k,v in pairs(data.interfaces) do
+		local i={}
+		i.name=v.name
+		i.mtu=v.mtu
+		i.mac_addr=v.mac
+		i.traffic_rx=v.traffic.rx
+		i.traffic_tx=v.traffic.tx
+		i.ipv4_addr=v.ipv4
+		if v.ipv6~=nil and next(v.ipv6)~=nil then
+		    i.ipv6_addr={}
+		    for k1,v1 in pairs(v.ipv6) do
+			    if v1:sub(1,4) == "fe80" then
+				i.ipv6_link_local_addr=v1
+			    else
+				table.insert(i.ipv6_addr,v1)
+			    end
+		    end
+		end
+		comTbl.interface_data[v.name]=i
+	    end
+	end
+        if data.originators~=nil then
+	   comTbl.batman_adv_originators={}
+	   for k,v in ipairs(data.originators) do
+		local o={}
+		o.originator=v.mac
+		o.nexthop=v.nexthop
+		o.last_seen=v.lastseen
+		o.outgoing_interface=v.interface
+		comTbl.batman_adv_originators["originator_"..(k-1)]=o
+	   end
+        end
+        if data.gateways~=nil then
+	    comTbl.batman_adv_gateway_list={}
+	    for k,v in ipairs(data.gateways) do
+		local g={}
+		g.selected=v.active
+		g.gateway=v.mac
+		g.link_quality=v.linkquality
+		g.outgoing_interface=v.interface
+		g.gw_class=v.class
+		g.nexthop="666"
+		comTbl.batman_adv_gateway_list["gateway_"..(k-1)]=g
+            end
+	end
+	
+        local string=xmlEncode (comTbl, "data", 1)                                                                                                                             
+        writeToFile(string,path)                                                                                                                                                       
+    else                                                                                                                                                                               
+        removeFile(path)                                                                                                                                                               
+    end                  
+end
+
+
 function linesToTable(lines)
     if lines==nil then
         return {}
@@ -105,9 +191,6 @@ function linesToTable(lines)
     for line in lines:lines() do
         table.insert (tab, line);
     end
-   -- if next(tab) == nil then
-   --     return nil
-   -- end
     return tab
 end
 
@@ -151,6 +234,7 @@ function fetchTimes()
     for k,v in pairs(data.times) do 
         data.times[k]=math.floor(tonumber(v)*1000) 
     end
+    if next(data.times)==nil then data.times=nil end
 end
 
 function fetchPositions()
@@ -165,10 +249,13 @@ function fetchSoftware()
     data.software.firmware=readFile("/lib/gluon/release")[1]
     data.software.kernel=readOutput("uname -r")[1]
     data.software.mesh="B.A.T.M.A.N. "..(readFile("/sys/module/batman_adv/version")[1])
-    data.software.vpn=readOutput("fastd -v")[1]
---    if readFirstRow(getOutput("uci get autoupdater.settings.enabled 2>/dev/null")) == "1" then
---       data.software.autoupdate=readFirstRow(getOutput("uci get autoupdater.settings.branch 2>/dev/null"))
---    end
+    data.software.vpn=readFirstRow(readOutput("fastd -v"))
+    if readFirstRow(readOutput("uci get autoupdater.settings.enabled 2>/dev/null")) == "1" then
+        data.software.autoupdate=readFirstRow(readOutput("uci get autoupdater.settings.branch 2>/dev/null"))
+    else
+        data.software.autoupdate="none"
+    end
+    if next(data.software)==nil then data.software=nil end
 end
 
 function fetchOriginators()
@@ -181,27 +268,26 @@ function fetchOriginators()
             table.insert(m,v1)
         end
         o.mac=m[1]
+
         o.nexthop=m[4]
         o.linkquality=tonumber(m[3])
+	o.interface=m[5]
         o.lastseen=math.floor(tonumber(m[2])*1000)
-    --    print(o.mac.."->"..o.nexthop)
-        if o.mac==o.nexthop then
+        if o.mac==o.nexthop then  					--todo: filter vpn servers
                 table.insert(data.originators,o);
         end
 
         
     end
+    if next(data.originators)==nil then data.originators=nil end  
 end
 
 function fetchInterfaces()
     data.interfaces={}
     for _,iface in pairs(readOutput("grep -E 'up|unknown' /sys/class/net/*/operstate")) do
-     --  print(iface)
         i={}
         ipath,i.name=string.match(iface,"(.+/(.-))/operstate.*")
-    --     print(ipath.." jjjjj "..i.name)
         if i.name~="lo" then
-   --    print(ipath.." jjjjj "..i.name)
             i.ipv6={}
             i.traffic={}
             i.traffic.rx=readFirstRow(readFile(ipath.."/statistics/rx_bytes"))
@@ -263,7 +349,7 @@ function fetchInterfaces()
             table.insert(data.interfaces,i)
         end
     end 
-    
+    if next(data.interfaces)==nil then data.interfaces=nil end
 end
 
 function fetchGateways()
@@ -281,12 +367,24 @@ function fetchGateways()
         g.class=m[5]
         table.insert(data.gateways,g)
     end
+    if next(data.gateways)==nil then data.gateways=nil end
 end
 
+function fetchProcesses()
+    data.processes={}                                                                                                                                                                      
+    local r=readFirstRow(readOutput("sed -r 's/[0-9.]+ [0-9.]+ ([0-9.]+) ([0-9]+)\\/([0-9]+) [0-9]+/\\1 \\2 \\3/' /proc/loadavg"))                                                         
+    if r~=nil then                                                                                                                                                                         
+        local t={r:match("(.+) (.+) (.+)")}                                                                                                                                            
+        for k,v in pairs(t) do t[k]=tonumber(v) end                                                                                                                                    
+        data.processes.loadavg, data.processes.runnable, data.processes.total=t[1],t[2],t[3]                                                                                           
+    end 
+end
 
 -- do the fetching
 data.hostname=readFile("/etc/hostname")[1]
-data.client_count=tonumber(readOutput("echo '5'")[1]);
+data.client_count=tonumber(readFirstRow(readOutput("batctl tl|wc -l")))-3
+data.model=readFirstRow(readOutput("grep -E '^machine' /proc/cpuinfo|sed -r 's/machine[[:space:]]*:[[:space:]]*(.*)/\\1/'"))
+fetchProcesses()
 fetchTimes()
 fetchMemory()
 fetchPositions()
@@ -294,13 +392,13 @@ fetchSoftware()
 fetchOriginators()
 fetchInterfaces()
 fetchGateways()
-
+data.asdfff={}
 
 
 generateXml()
 
 generateJson()
 
-
+generateNodewatcherCompat()
 
 
