@@ -176,10 +176,14 @@ function generateNodewatcherCompat()
 	end
 	
         local string=xmlEncode (comTbl, "data", 1)                                                                                                                             
-        writeToFile(string,path)                                                                                                                                                       
+        writeToFile(string,path)   
+	--recreate symlink to old location
+	local fp=uci:get("nodewatcher2","prefs","destination_folder").."/"..path
+	os.execute("if [ ! -h /lib/gluon/status-page/www/node.data ]; then ln -s "..fp.." /lib/gluon/status-page/www/node.data ; fi")
     else                                                                                                                                                                               
         removeFile(path)                                                                                                                                                               
-    end                  
+	end                  
+    
 end
 
 
@@ -290,8 +294,8 @@ function fetchInterfaces()
         if i.name~="lo" then
             i.ipv6={}
             i.traffic={}
-            i.traffic.rx=readFirstRow(readFile(ipath.."/statistics/rx_bytes"))
-            i.traffic.tx=readFirstRow(readFile(ipath.."/statistics/tx_bytes"))
+            i.traffic.rx=tonumber(readFirstRow(readFile(ipath.."/statistics/rx_bytes")))
+            i.traffic.tx=tonumber(readFirstRow(readFile(ipath.."/statistics/tx_bytes")))
             -- general interface info
             for _,ipl in pairs(readOutput("ip addr show "..i.name)) do
                 local match=ipl:match("%s*inet6 ([0-9a-f:]+)(/%d+) .*")
@@ -320,7 +324,6 @@ function fetchInterfaces()
             -- wifi info
             i.radio={}
             for _,ipl in pairs(readOutput("iwinfo "..i.name.." info 2>/dev/null")) do
-           --     print(ipl)
                 local match=ipl:match('ESSID:%s+"(.*)".*')
                 if match~=nil then
                     i.radio.essid=match
