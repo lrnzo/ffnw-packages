@@ -109,6 +109,7 @@ function generateNodewatcherCompat()
     if uci:get("nodewatcher2","prefs","generate_nodewatcher_compat") == "1" then                                                                                                                     
 	comTbl.system_data={}
 	comTbl.system_data.status="online"
+	comTbl.client_count=data.clientcount
 	comTbl.system_data.hostname=data.hostname
         comTbl.system_data.position=data.position
 	comTbl.system_data.distname="gluon"
@@ -384,8 +385,9 @@ function fetchProcesses()
 end
 
 -- do the fetching
-data.hostname=readFile("/etc/hostname")[1]
-data.client_count=tonumber(readFirstRow(readOutput("batctl tl|wc -l")))-3
+data.owner=readFirstRow(readOutput("uci get gluon-node-info.@owner[0].contact"))
+data.hostname=readFirstRow(readFile("/proc/sys/kernel/hostname"))
+data.clientcount=tonumber(readFirstRow(readOutput("batctl tl|wc -l")))-3
 data.model=readFirstRow(readOutput("grep -E '^machine' /proc/cpuinfo|sed -r 's/machine[[:space:]]*:[[:space:]]*(.*)/\\1/'"))
 fetchProcesses()
 fetchTimes()
