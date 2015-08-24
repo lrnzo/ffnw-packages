@@ -193,10 +193,6 @@ crawl() {
 
 	#write data to hxml file that provides the data on httpd
 	echo $DATA > $SCRIPT_DATA_FILE
-	#symlink nodewatcher-data in gluon-statuspage-docroot
-	if [ ! -h /lib/gluon/status-page/www/node.data ]; then
-		ln -s $SCRIPT_DATA_FILE /lib/gluon/status-page/www/node.data
-	fi
 }
 
 LANG=C
