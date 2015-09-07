@@ -8,13 +8,9 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libwlocate
-PKG_VERSION:=1.2
-PKG_RELEASE:=1
+PKG_VERSION:=1.5
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://dev.ffnw.de/packages
-PKG_MD5SUM:=db450fcdf3d1d1f0c85f07bece523c0c
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -33,6 +29,11 @@ define Package/libwlocate/description
 	Thus no GPS is needed for positioning. This WLAN-based geolocation happens
 	without using any of the commercial services that do the same but track the users
 	position and data. libwlocate instead bases on the free OpenWLANMap project.
+endef
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Build/InstallDev
