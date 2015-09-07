@@ -144,30 +144,6 @@ extern "C"
     *             parameter can be used, elsewhere the structures contents are undefined
     */
    WLOC_EXT_API int wloc_get_wlan_data(struct wloc_req *request);
-   
-   /**
-    * Using this function the numeric country code that is returned by the wloc_get_location
-    * function can be decoded to a two-character identifier.
-    * @param[in] ccode a country code value that has to be bigger than 0
-    * @param[out] country this parameter has to point to a char array with a length of at least
-    *            two, here the country identifier is stored that belongs to the given code;
-    *            in case the function returns an error the contents of this variable are
-    *            undefined
-    * @return WLOC_OK in case a valid and known country code was given, WLOC_ERROR in case the
-    *            country code is unknown    
-    */
-   WLOC_EXT_API int wloc_get_country_from_code(short ccode,char *country);
-
-   /**
-    * Using this function the numeric country code that is returned by the wloc_get_location
-    * function can be decoded to a full-length country name. The name is returned as null-
-    * terminated string that does not need to be copied, it is allocated by the library and will
-    * be released by it.
-    * @param[in] ccode a country code value that has to be bigger than 0
-    * @return NULL in case the country code could not be decoded or the country name in case of
-    *            success    
-    */
-   WLOC_EXT_API char* wloc_get_countryname_from_code(short ccode);
 
    WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,double *lat,double *lon,char *quality,short *ccode);
 #ifdef __cplusplus
