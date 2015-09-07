@@ -58,7 +58,6 @@ int main(int argc,char *argv[])
    double          lat,lon;
    char            quality;
    short           ccode;
-   char            country[3];
    FILE           *FHandle;
    struct wloc_req request,prevRequest;
    unsigned char   empty_bssid[6]={0,0,0,0,0,0};
@@ -85,9 +84,6 @@ int main(int argc,char *argv[])
       else if (ret==WLOC_OK)
       {
          printf("Your location: %f (lat) %f (lon)\nQuality: %d %%\n",lat,lon,quality);
-         country[2]=0;
-         if (wloc_get_country_from_code(ccode,country)==WLOC_OK) printf("Country: %d - %s\n",ccode,country);
-         else printf("Country: unknown\n");
       }
       else printf("Error: failed due to an unknown error %d!\n",ret);
    }
