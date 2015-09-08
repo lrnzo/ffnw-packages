@@ -1,4 +1,4 @@
-CCOMPILER=gcc -Wall -fPIC -shared -Wno-unused -O2 -g0 -DNDEBUG -D_REENTRANT -DENV_LINUX -I. -I..
+CCOMPILER=$(CC) -Wall -fPIC -shared -Wno-unused -O2 -g0 -DNDEBUG -D_REENTRANT -DENV_LINUX -I. -I..
 
 SYSLIBRARIES= -lm
 
