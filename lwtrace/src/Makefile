@@ -1,9 +1,8 @@
 STRIP=strip
 
-CC      = $(CC)
-CFLAGS  = -Wall -O2 -g0 -DNDEBUG -DENV_LINUX -D_REENTRANT -DNDEBUG -L/usr/lib -L/usr/local/lib/ -I.
+CFLAGS  = -Wall -O2 -g0 -DNDEBUG -DENV_LINUX -D_REENTRANT -I$(STAGING_DIRI)/usr/include/
 
-LDFLAGS  = -L. -lwlocate -lm
+LDFLAGS  = -L$(STAGING_DIR)/usr/lib -lwlocate -lm
 
 PNAME=lwtrace
 
