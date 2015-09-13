@@ -36,11 +36,6 @@ define Build/Prepare
 	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/lwtrace $(1)/usr/bin/
-endef
-
 define Package/lwtrace/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(CP) $(PKG_BUILD_DIR)/lwtrace $(1)/usr/bin/
