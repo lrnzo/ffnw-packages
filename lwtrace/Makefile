@@ -37,8 +37,8 @@ define Build/Prepare
 endef
 
 define Package/lwtrace/install
-	$(INSTALL_DIR) $(1)/usr/bin
-	$(CP) $(PKG_BUILD_DIR)/lwtrace $(1)/usr/bin/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/lwtrace $(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,lwtrace))
