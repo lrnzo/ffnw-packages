@@ -1,6 +1,6 @@
 STRIP=strip
 
-CFLAGS  = -Wall -O2 -g0 -DNDEBUG -DENV_LINUX -D_REENTRANT -I$(STAGING_DIRI)/usr/include/
+CFLAGS  = -Wall -O2 -g0 -DNDEBUG -DENV_LINUX -D_REENTRANT -I$(STAGING_DIR)/usr/include/
 
 LDFLAGS  = -L$(STAGING_DIR)/usr/lib -lwlocate -lm
 
