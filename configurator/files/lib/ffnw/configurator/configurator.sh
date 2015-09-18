@@ -150,6 +150,24 @@ autoadd_ipv6_address() {
 	fi
 }
 
+sync_geo_location(){
+	if [[ $(awk 'BEGIN{srand();print int(rand()*100)}') -lt 5 ]];then
+		mac=$(uci get wireless.mesh_radio0.macaddr)
+		coords="$(wget -q -O - "http://${API_IPV6_ADRESS}/getcoords.php?mac=$mac")"
+		echo "$coords" | grep "[0-9]\{1,3\}\(\.[0-9]\)* [0-9]\{1,3\}\(\.[0-9]\)*"
+		if [ "$?" = "0" ]; then
+			lat="$(echo "$coords" | cut -d'|' -f1)"
+			lon="$(echo "$coords" | cut -d'|' -f2)"
+			uci set gluon-node-info.@location[0].latitude=$lat
+			uci set gluon-node-info.@location[0].longitude=$lon
+			uci set gluon-node-info.@location[0].share_location=1
+			uci commit gluon-node-info.@location[0]
+		fi
+	fi
+}
+
+sync_geo_location
+
 if [ $CRAWL_METHOD == "login" ]; then
 	err "Authentification method is: username and passwort"
 elif [ $CRAWL_METHOD == "hash" ]; then
