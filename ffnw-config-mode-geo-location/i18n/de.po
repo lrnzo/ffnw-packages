@@ -29,7 +29,7 @@ msgstr "Intervall in Minuten"
 msgid "Set refresh interval, the default is once per day"
 msgstr "Setze einen Intervall. Der standard Intervall ist einmal täglich"
 
-msgid "Set location maunally"
+msgid "Set location manually"
 msgstr "Setze die Position Manuell"
 
 msgid "Latitude"
