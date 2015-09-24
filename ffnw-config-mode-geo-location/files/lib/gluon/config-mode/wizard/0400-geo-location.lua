@@ -7,7 +7,7 @@ local M = {}
 function M.section(form)
   local s = form:section(cbi.SimpleSection, nil, i18n.translate(
     'If you want the location of your node to be displayed on the map, '
-      .. 'you can set a automatic localization of your router or enter its coordinates here. Specifying the altitude '
+      .. 'you can set an automatically localization of your router or enter its coordinates here. Specifying the altitude '
       .. 'is optional and should only be done if a proper value is known.'))
 
   local o
