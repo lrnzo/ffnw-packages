@@ -13,7 +13,10 @@ msgstr ""
 msgid "Interval in minutes"
 msgstr ""
 
-msgid "Set location maunaly"
+msgid "Set refresh interval, the default is once per day"
+msgstr ""
+
+msgid "Set location maunally"
 msgstr ""
 
 msgid "Latitude"

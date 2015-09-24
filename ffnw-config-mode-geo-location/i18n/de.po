@@ -11,7 +11,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 msgid ""
-"If you want the location of your node to be displayed on the map, you can sed an automatically localization of your router or "
+"If you want the location of your node to be displayed on the map, you can set an automatically localization of your router or "
 "enter its coordinates here. Specifying the altitude is optional and should "
 "only be done if a proper value is known."
 msgstr ""
@@ -26,7 +26,10 @@ msgstr "Automatische Positions bestimmung via WLAN"
 msgid "Interval in minutes"
 msgstr "Intervall in Minuten"
 
-msgid "Set location maunaly"
+msgid "Set refresh interval, the default is once per day"
+msgstr "Setze einen Intervall. Der standard Intervall ist einmal täglich"
+
+msgid "Set location maunally"
 msgstr "Setze die Position Manuell"
 
 msgid "Latitude"
