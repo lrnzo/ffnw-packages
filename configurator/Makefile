@@ -29,8 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-configurator/install
-	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/configurator $(1)/lib/gluon/cron/configurator
+	$(CP) ./files/lib/gluon/* $(1)/lib/gluon/
 	$(INSTALL_DIR) $(1)/lib/ffnw/configurator/
 	$(INSTALL_BIN) files/lib/ffnw/configurator/configurator.sh $(1)/lib/ffnw/configurator/
 	$(INSTALL_DIR) $(1)/etc/config/
