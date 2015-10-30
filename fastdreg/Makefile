@@ -30,12 +30,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-fastdreg/install
-	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/fastdreg $(1)/lib/gluon/cron/fastdreg
-	$(INSTALL_DIR) $(1)/lib/ffnw/fastdreg/
-	$(INSTALL_BIN) files/lib/ffnw/fastdreg/fastdreg.sh $(1)/lib/ffnw/fastdreg/
-	$(INSTALL_DIR) $(1)/etc/config/
-	$(INSTALL_CONF) files/fastdreg.config $(1)/etc/config/fastdreg
+	$(CP) ./files/* $(1) /
 endef
 
 $(eval $(call BuildPackage,ffnw-fastdreg))
