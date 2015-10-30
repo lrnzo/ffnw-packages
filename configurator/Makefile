@@ -29,11 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-configurator/install
-	$(CP) ./files/lib/gluon/* $(1)/lib/gluon/
-	$(INSTALL_DIR) $(1)/lib/ffnw/configurator/
-	$(INSTALL_BIN) files/lib/ffnw/configurator/configurator.sh $(1)/lib/ffnw/configurator/
-	$(INSTALL_DIR) $(1)/etc/config/
-	$(INSTALL_CONF) files/configurator.config $(1)/etc/config/configurator
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ffnw-configurator))
