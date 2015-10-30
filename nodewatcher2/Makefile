@@ -33,10 +33,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-nodewatcher2/install
-	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/nodewatcher2 $(1)/lib/gluon/cron/nodewatcher2
-	$(INSTALL_DIR) $(1)/lib/ffnw/nodewatcher2/
-	$(INSTALL_BIN) files/lib/ffnw/nodewatcher2/nodewatcher.sh $(1)/lib/ffnw/nodewatcher2/
+	$(CP) ./files/* $(1) /
 endef
 
 $(eval $(call BuildPackage,ffnw-nodewatcher2))
