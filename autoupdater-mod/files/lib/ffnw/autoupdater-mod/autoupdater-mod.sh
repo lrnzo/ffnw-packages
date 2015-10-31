@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cleanup () {
-	rm -rf /lib/gluon/cron/autoupdater-mod
+	rm -rf /usr/lib/micron.d/autoupdater-mod
 	rm -rf /lib/ffnw/autoupdater-mod
 	}
 
