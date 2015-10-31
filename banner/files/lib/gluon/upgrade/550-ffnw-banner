@@ -1,0 +1,11 @@
+#!/bin/lua
+
+local delDir = "/lib/ffnw/banner/"
+local srcFile = "/lib/ffnw/banner/banner"
+local desFile = "/etc/banner"
+local srcBanner = io.open(srcFile, "r")
+
+if srcBanner~=nil then
+	os.execute('cp '..srcFile..' '..desFile)
+	os.execute('rm -rf '..delDir)
+end
