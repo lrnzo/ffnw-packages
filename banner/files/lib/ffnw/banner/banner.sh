@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cleanup () {
-	rm -rf /lib/gluon/cron/ffnw-banner
+	rm -rf /usr/lib/micron.d/ffnw-banner
 	rm -rf /lib/ffnw/banner
 	}
 
