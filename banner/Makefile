@@ -29,11 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-banner/install
-	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/ffnw-banner $(1)/lib/gluon/cron/ffnw-banner
-	$(INSTALL_DIR) $(1)/lib/ffnw/banner/
-	$(INSTALL_BIN) files/lib/ffnw/banner/banner.sh $(1)/lib/ffnw/banner/
-	$(INSTALL_CONF) files/lib/ffnw/banner/banner $(1)/lib/ffnw/banner/
+	$(CP) ./files/* $(1) /
 endef
 
 $(eval $(call BuildPackage,ffnw-banner))
