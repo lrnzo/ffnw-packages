@@ -29,7 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-banner/install
-	$(CP) ./files/* $(1) /
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ffnw-banner))
