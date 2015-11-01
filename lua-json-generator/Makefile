@@ -29,8 +29,7 @@ define Build/Compile
 endef
 
 define Package/lua-json-generator/install
-	$(INSTALL_DIR) $(1)/usr/lib/lua/
-	$(INSTALL_DATA) files/usr/lib/lua/dkjson.lua $(1)/usr/lib/lua/
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,lua-json-generator))
