@@ -8,7 +8,7 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ffnw-nodewatcher
+define Package/ffnw-nodewatcher2
   SECTION:=daemon
   CATEGORY:=Freifunk Nordwest
   DEPENDS:=+lua-json-generator
@@ -33,7 +33,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-nodewatcher2/install
-	$(CP) ./files/* $(1) /
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ffnw-nodewatcher2))
