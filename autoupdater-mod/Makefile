@@ -11,11 +11,11 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ffnw-autoupdater-mod
   SECTION:=Daemon
   CATEGORY:=Freifunk Nordwest
-  TITLE:=custom autoupdater special for batman upgrade
+  TITLE:=custom autoupdater special to split the testing from stable network
 endef
 
 define Package/ffnw-autoupdater-mod/description
-  custom autoupdater special for batman upgrade
+  custom autoupdater special to split the testing from stable network
 endef
 
 define Build/Prepare
@@ -29,10 +29,7 @@ define Build/Compile
 endef
 
 define Package/ffnw-autoupdater-mod/install
-	$(INSTALL_DIR) $(1)/lib/gluon/cron/
-	$(INSTALL_DATA) files/lib/gluon/cron/autoupdater-mod $(1)/lib/gluon/cron/
-	$(INSTALL_DIR) $(1)/lib/ffnw/autoupdater-mod/
-	$(INSTALL_BIN) files/lib/ffnw/autoupdater-mod/* $(1)/lib/ffnw/autoupdater-mod/
+	$(CP) ./files/* $(1)/
 endef
 
 $(eval $(call BuildPackage,ffnw-autoupdater-mod))
