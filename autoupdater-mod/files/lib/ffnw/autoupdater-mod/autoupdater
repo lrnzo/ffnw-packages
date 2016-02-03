@@ -1,5 +1,7 @@
 #!/usr/bin/lua
 
+require "socket"
+
 local fs = require('luci.fs')
 local nixio = require('nixio')
 local platform_info = require('platform_info')
@@ -8,28 +10,34 @@ local util = require('luci.util')
 
 local autoupdater_util = require('autoupdater.util')
 local autoupdater_version = require('autoupdater.version')
-local pidPath="/var/run/autoupdater.pid"
+local timeStamp = "/tmp/autoupdater.time"
 local direct_vpn= false
 local mesh_lan = false
 
-if io.open(pidPath, "r") ~=nil then
-	io.stderr:write("The autoupdater is still running.\n")
-	os.exit(1)
-else
-	local pidf = io.open(pidPath, "w")
-	io.close(pidf)
+function file_exists(name)
+  local f=io.open(name,"r")
+  if f~=nil then io.close(f) return true else return false end
 end
 
-function pid_clean()
-	if io.open(pidPath, "r") ~=nil then
-		os.remove(pidPath)
-	end
-	return 0
-end
-
-function wait(seconds)
-	local start = os.time()
-	repeat until os.time() > start + seconds
+--Create time stamp and wait valiu seconds
+function wait(filename,seconds)
+  local ret = false
+  if file_exists(filename) then
+    for line in io.popen(string.format("cat %s 2> /dev/null",sfile),'r'):lines() do
+      if line:match("(%d%d%d+)") then
+        local currendTime = socket.gettime()
+        if currendTime - tonumber(line) >= seconds then
+          ret = true
+          break
+        end
+      end
+    end
+  else
+    local file,err = io.open( filename, "wb" )
+    if err then return nil end
+    file:write(socket.gettime())
+  end
+  return ret
 end
 
 local foreach_count=1
@@ -47,14 +55,13 @@ end
 
 if not platform_info.get_image_name() then
   io.stderr:write("The autoupdater doesn't support this hardware model.\n")
-  pid_clean()
   os.exit(1)
 end
 
 autoupdater_util.randomseed()
 
 local settings = uci:get_all('autoupdater', 'settings')
-local branch = uci:get_all('autoupdater', settings.branch)
+local branch_name = settings.branch
 
 local old_version = util.trim(fs.readfile(settings.version_file) or '')
 
@@ -62,9 +69,45 @@ local old_version = util.trim(fs.readfile(settings.version_file) or '')
 -- the priority and even when it is disabled in uci
 local force = false
 
+-- If fallback is true the updater will perform an update only if the
+-- timespan given by the priority and another 24h have passed
+local fallback = false
+
+local function parse_args()
+  local i = 1
+  while arg[i] do
+    if arg[i] == '-f' then
+      force = true
+    elseif arg[i] == '--fallback' then
+      fallback = true
+    elseif arg[i] == '-b' then
+      i = i+1
+
+      if not arg[i] then
+	io.stderr:write("Error parsing command line: expected branch name\n")
+	os.exit(1)
+      end
+
+      branch_name = arg[i]
+    else
+      io.stderr:write("Error parsing command line: unexpected argument '" .. arg[i] .. "'\n")
+      os.exit(1)
+    end
+
+    i = i+1
+  end
+end
+
+parse_args()
+
+local branch = uci:get_all('autoupdater', branch_name)
+if not branch then
+  io.stderr:write("Can't find configuration for branch '" .. branch_name .. "'\n")
+  os.exit(1)
+end
+
 if settings.enabled ~= '1' and not force then
   io.stderr:write('autoupdater is disabled.\n')
-  pid_clean()
   os.exit(0)
 end
 
@@ -113,7 +156,7 @@ local function read_manifest(mirror)
 
   -- Read all lines from the manifest
   -- The upper part is saves to lines, the lower part to sigs
-  for line in io.popen(string.format("wget -O- '%s/%s.manifest'", mirror, branch.name), 'r'):lines() do
+  for line in io.popen(string.format("wget -T 120 -O- '%s/%s.manifest'", mirror, branch.name), 'r'):lines() do
     if not sep then
       if line == '---' then
 	sep = true
@@ -175,13 +218,52 @@ end
 
 -- Downloads the firmware image from a mirror to a given output file
 local function fetch_firmware(mirror, filename, output)
-  if os.execute(string.format("wget -O '%s' '%s/%s'", output, mirror, filename)) ~= 0 then
+  if os.execute(string.format("wget -T 120 -O '%s' '%s/%s'", output, mirror, filename)) ~= 0 then
     io.stderr:write('Error downloading the image from ' .. mirror .. '\n')
     return false
   end
 
   return true
 end
+
+-- Returns the computed update probability
+local function get_probability(date, priority)
+  local seconds = priority * 86400
+  local diff = os.difftime(os.time(), date)
+
+  if diff < 0 then
+    -- When the difference is negative, there are two possibilities: The manifest contains a wrong date, or our own clock is wrong.
+    -- As there isn't anything useful to do for an incorrect manifest, we'll assume the latter case and update anyways as we
+    -- can't do anything better
+    io.stderr:write('Warning: clock seems to be incorrect.\n')
+
+    if tonumber(fs.readfile('/proc/uptime'):match('^([^ ]+) ')) < 600 then
+      -- If the uptime is very low, it's possible we just didn't get the time over NTP yet, so we'll just wait until the next time the updater runs
+      return 0
+    else
+      -- Will give 1 when priority == 0, and lower probabilities the higher the priority value is
+      -- (similar to the old static probability system)
+      return 0.75^priority
+    end
+
+  elseif fallback then
+    if diff >= seconds + 86400 then
+      return 1
+    else
+      return 0
+    end
+
+  elseif diff >= seconds then
+    return 1
+
+  else
+    local x = diff/seconds
+    -- This is the most simple polynomial with value 0 at 0, 1 at 1, and whose first derivative is 0 at both 0 and 1
+    -- (we all love continuously differentiable functions, right?)
+    return (-2)*x^3 + 3*x^2
+  end
+end
+
 
 -- Tries to perform an update from a given mirror
 local function autoupdate(mirror)
@@ -197,8 +279,34 @@ local function autoupdate(mirror)
 
   io.stderr:write('New version available.\n')
 
+
+  if not force and math.random() >= get_probability(manifest.date, manifest.priority) then
+    io.stderr:write('No autoupdate this time. Use -f to override.\n')
+    return true
+  end
+
+
   os.execute('sync; sysctl -w vm.drop_caches=3')
   collectgarbage()
+
+  local status_wait = false
+  if direct_vpn == true then
+    status_wait = wait(timeStamp,28800) -- Wait for 8h
+    io.stderr:write('Direct VPN is true wait 8h.\n')
+  elseif mesh_lan == true then
+    status_wait = wait(21600) -- Wait for 6h
+    io.stderr:write('Mesh on LAN is true 6h.\n')
+  end
+
+  if status_wait ~= nil then
+    if not status_wait then
+       io.stderr:write('Contdown is still running...\n')
+       return true
+    end
+  else
+    io.stderr:write('Something goes wrong while writing into: ' .. timeStamp .. '.\n')
+    return false
+  end
 
   local image = os.tmpname()
   if not fetch_firmware(mirror, manifest.filename, image) then
@@ -207,17 +315,9 @@ local function autoupdate(mirror)
 
   local checksum = util.exec(string.format("sha512sum '%s'", image)):match('^%x+')
   if checksum ~= manifest.checksum then
-	io.stderr:write('Invalid image checksum!\n')
-	os.remove(image)
-	return false
-  end
-
-  if direct_vpn == true then
-	wait(28800) -- Wait for 8h
-  elseif mesh_lan == true then
-	wait(21600) -- Wait for 6h
-  else
-	wait(14400) -- Wait for 4h
+    io.stderr:write('Invalid image checksum!\n')
+    os.remove(image)
+    return false
   end
 
   io.stderr:write('Upgrading firmware...\n')
@@ -236,7 +336,6 @@ local function autoupdate(mirror)
   -- We output the error message through stdout as stderr isn't available anymore
   io.write('Failed to call sysupgrade?\n')
   os.remove(image)
-  pid_clean()
   os.exit(1)
 end
 
@@ -246,11 +345,9 @@ local mirrors = branch.mirror
 while #mirrors > 0 do
   local mirror = table.remove(mirrors, math.random(#mirrors))
   if autoupdate(mirror) then
-    pid_clean()
     os.exit(0)
   end
 end
 
 io.stderr:write('No usable mirror found.\n')
-pid_clean()
 os.exit(1)
