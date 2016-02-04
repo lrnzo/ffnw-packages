@@ -1,11 +1,9 @@
 #!/usr/bin/lua
 
-require "socket"
-
-local fs = require('luci.fs')
 local nixio = require('nixio')
+local fs = require('nixio.fs')
 local platform_info = require('platform_info')
-local uci = require('luci.model.uci').cursor()
+local uci = require('uci').cursor()
 local util = require('luci.util')
 
 local autoupdater_util = require('autoupdater.util')
@@ -23,9 +21,9 @@ end
 function wait(filename,seconds)
   local ret = false
   if file_exists(filename) then
-    for line in io.popen(string.format("cat %s 2> /dev/null",sfile),'r'):lines() do
+    for line in io.popen(string.format("cat %s 2> /dev/null",filename),'r'):lines() do
       if line:match("(%d%d%d+)") then
-        local currendTime = socket.gettime()
+        local currendTime = os.time()
         if currendTime - tonumber(line) >= seconds then
           ret = true
           break
@@ -35,7 +33,7 @@ function wait(filename,seconds)
   else
     local file,err = io.open( filename, "wb" )
     if err then return nil end
-    file:write(socket.gettime())
+    file:write(os.time())
   end
   return ret
 end
@@ -285,10 +283,6 @@ local function autoupdate(mirror)
     return true
   end
 
-
-  os.execute('sync; sysctl -w vm.drop_caches=3')
-  collectgarbage()
-
   local status_wait = false
   if direct_vpn == true then
     status_wait = wait(timeStamp,28800) -- Wait for 8h
@@ -307,6 +301,9 @@ local function autoupdate(mirror)
     io.stderr:write('Something goes wrong while writing into: ' .. timeStamp .. '.\n')
     return false
   end
+
+  os.execute('sync; sysctl -w vm.drop_caches=3')
+  collectgarbage()
 
   local image = os.tmpname()
   if not fetch_firmware(mirror, manifest.filename, image) then
