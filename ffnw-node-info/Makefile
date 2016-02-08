@@ -5,32 +5,27 @@ PKG_VERSION:=1
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_BUILD_DEPENDS := respondd
 
-include $(INCLUDE_DIR)/package.mk
+include $(GLUONDIR)/include/package.mk
 
 define Package/ffnw-node-info
   SECTION:=daemon
   CATEGORY:=Freifunk Nordwest
-  TITLE:=Sed node infos for alfred
-  DEPENDS:=+lwtrace +libwlocate +gluon-core
-endef
-
-define Package/ffnw-node-info/description
-	Sed node infos for alfred
+  TITLE:=Add /etc/config/gluon-node-info to uci
+  DEPENDS:=+lwtrace +libwlocate +gluon-core +libgluonutil
 endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
-endef
-
-define Build/Configure
-endef
-
-define Build/Compile
+	$(CP) ./src/* $(PKG_BUILD_DIR)/
 endef
 
 define Package/ffnw-node-info/install
 	$(CP) ./files/* $(1)/
+
+	$(INSTALL_DIR) $(1)/lib/gluon/respondd
+	$(CP) $(PKG_BUILD_DIR)/respondd.so $(1)/lib/gluon/respondd/node-info.so
 endef
 
 define Package/ffnw-node-info/postinst
