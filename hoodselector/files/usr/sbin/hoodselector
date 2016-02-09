@@ -148,7 +148,7 @@ local function get_neigbour_bssid(radios)
 	local hoodbssid = nil
 	local bssid_leases = bssid_hist_load("/tmp/hoodselector.leases")
 	for index, radio in ipairs(radios) do
-		hoodbssid = uci:get('wireless', 'mesh_' .. radio, 'bssid')
+		hoodbssid = uci:get('wireless', 'ibss_' .. radio, 'bssid')
 		local bssid_his = ""
 		if bssid_leases[index] ~= nil then
 			bssid_his = bssid_leases[index]
@@ -156,7 +156,7 @@ local function get_neigbour_bssid(radios)
 		bssid_his = bssid_his..' '..hoodbssid
 		local lastQuality = 255
 		local tmphoodbssid = nil
-		for wifiscan in io.popen(string.format("iw %s scan | grep \"%s\" -B8", uci:get('wireless', 'mesh_' .. radio, 'ifname'), uci:get('wireless', 'mesh_' .. radio, 'ssid')),'r'):lines() do
+		for wifiscan in io.popen(string.format("iw %s scan | grep \"%s\" -B8", uci:get('wireless', 'ibss_' .. radio, 'ifname'), uci:get('wireless', 'ibss_' .. radio, 'ssid')),'r'):lines() do
 			if wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)") then
 				tmphoodbssid = wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)"):upper()
 			end
@@ -277,8 +277,8 @@ local function set_hoodconfig(hood,radios)
 		if hoodconf:match("bssid") then
 			local if_change = false
 			for index, radio in ipairs(radios) do
-				if not ( uci:get('wireless', 'mesh_' .. radio, 'bssid') == val ) then
-					uci:section('wireless', 'wifi-iface', 'mesh_' .. radio,
+				if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == val ) then
+					uci:section('wireless', 'wifi-iface', 'ibss_' .. radio,
 						{
 							bssid = val
 						}
