@@ -357,52 +357,6 @@ if jhood ~= nil then
 		-- Prüfe hood auf fehler
 		if geo_hood ~= nil then
 			io.stderr:write('Hole hood bei position\n')
-			if get_gw_range() then
-				io.stderr:write('Batman GWs in reichweite\n')
-				local no_error = set_hoodconfig(geo_hood,radios)
-				if no_error then
-					io.stderr:write('setze hood bei position\n')
-					pid_clean()
-					os.exit(0)
-				end
-				io.stderr:write('setze hood bei position Fehler\n')
-				io.stderr:write('Error while setting new hood getting by geoposition.\n')
-				pid_clean()
-				os.exit(0)
-			end
-			io.stderr:write('Batman GWs nicht in reichweite\n')
-			if next(radios) then
-				io.stderr:write('WLAN-Scan nach nachbar freifunk Routern\n')
-				local scan_bssid = get_neigbour_bssid(radios)
-				if scan_bssid ~= nil then
-					local bssid_hood = gethood_by_bssid(jhood, scan_bssid)
-					if bssid_hood ~= nil then
-						io.stderr:write('Hole hood bei bssid\n')
-						local no_error = set_hoodconfig(bssid_hood,radios)
-						if no_error then
-							io.stderr:write('setze hood bei bssid oder Setze Defaulthood mit geänderter BSSID wenn keine passende hood exitiert\n')
-							pid_clean()
-							os.exit(0)
-						end
-						io.stderr:write('setze hood bei bssid Fehler\n')
-						io.stderr:write('Error while setting new hood getting by bssid.\n')
-						pid_clean()
-						os.exit(0)
-					end
-					io.stderr:write('Hole hood bei bssid Fehler\n')
-					local no_error = set_hoodconfig(geo_hood,radios)
-					if no_error then
-						io.stderr:write('setze hood bei position\n')
-						pid_clean()
-						os.exit(0)
-					end
-					io.stderr:write('setze hood bei position Fehler\n')
-					io.stderr:write('Error while setting new hood getting by geoposition.\n')
-					pid_clean()
-					os.exit(0)
-				end
-			end
-			io.stderr:write('WLAN-Scan nach nachbar freifunk Routern Fehler\n')
 			local no_error = set_hoodconfig(geo_hood,radios)
 			if no_error then
 				io.stderr:write('setze hood bei position\n')
