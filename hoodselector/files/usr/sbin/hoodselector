@@ -31,16 +31,16 @@ end
 
 -- Return a wifi device list
 local function get_wifi_devices()
-        local radios = {}
-        uci:foreach('wireless', 'wifi-device',
-                function(s)
-                        table.insert(radios, s['.name'])
-                end
-        )
-        return radios
+	local radios = {}
+	uci:foreach('wireless', 'wifi-device',
+		function(s)
+			table.insert(radios, s['.name'])
+		end
+	)
+	return radios
 end
 
--- Get Geoposition if no static position present try strace. Return nil for no position
+-- Get Geoposition if no static position present try lwtrace. Return nil for no position
 local function get_geolocation()
 	local lat = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'latitude')
 	local lng = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'longitude')
@@ -66,10 +66,10 @@ local function get_geolocation()
 	return ret
 end
 
---	Return hood from the hood file based on geo position. This method
---	can return the following data:
--- 		* real hood if a hood could be determined for the given position
--- 		* nil if no real hood could be determined
+-- Return hood from the hood file based on geo position. This method
+-- can return the following data:
+-- * real hood if a hood could be determined for the given position
+-- * nil if no real hood could be determined
 local function gethood_by_geo(jhood,geo)
 	for n, h in pairs(jhood) do
 		for n, box in pairs(h.boxes) do
@@ -81,11 +81,11 @@ local function gethood_by_geo(jhood,geo)
 	return nil
 end
 
---	Return hood from the hood file based on a given BSSID. This method
---	takes a BSSID and returns the first real hood (no default hood)
---	that coresponds to the BSSIDs. This method can return the following data:
--- 		* real hood if a real hood matches the given BSSID
--- 		* nil if no real hood could be found
+-- Return hood from the hood file based on a given BSSID. This method
+-- takes a BSSID and returns the real hood that coresponds to the BSSIDs.
+-- This method can return the following data:
+-- * real hood if a real hood matches the given BSSID
+-- * nil if no real hood could be found
 local function gethood_by_bssid(jhood, scan_bssid)
 	for n, h in pairs(jhood) do
 		if scan_bssid:match(h.bssid) then
@@ -95,10 +95,10 @@ local function gethood_by_bssid(jhood, scan_bssid)
 	return nil
 end
 
---	Return the first (and only) default hood in the hood list.
---	This method can return the following data:
--- 		* default hood
--- 		* nil if no default hood has been defined
+-- Return the default hood in the hood list.
+-- This method can return the following data:
+-- * default hood
+-- * nil if no default hood has been defined
 local function get_default_hood(jhood)
 	for n, h in pairs(jhood) do
 		if h.defaulthood then
@@ -322,98 +322,64 @@ local function set_hoodconfig(hood,radios)
 	return true
 end
 
--- Return nil for broken file or no such file. Or return a table
--- readhoodfile()
--- Return a table that included numeric values or nil for no position
--- get_geolocation()
--- Return a hood if no default hood has ben defind or the hoodfile dont have any hoods return nil
--- gethood_by_geo()
--- Hole liste an wlan chipsetzen, wenn es keine gibts return leere Liste.
--- get_wifi_devices()
--- Set hood conf true for pass and false for faild
--- set_hoodconfig()
--- Return a scaned bssid that has the best signal quality and was not used before
--- get_neigbour_bssid()
--- Hohle hood zur BSSID wenn keine existirt return defaulthood mit geänderter BSSID gibt es keine default hood return nil
--- gethood_by_bssid()
+function exit()
+	pid_clean()
+	os.exit(0)
+end
 
 --Start
---Lese die Hooddatei ein
 local jhood = readhoodfile(file)
--- Prüfe ob hooddatei korrekt eingelesen wurde
 if jhood ~= nil then
-	io.stderr:write('Hat hoodfile mit korrektem json\n')
-	-- Liste an wlan chipsetzen
 	local radios = get_wifi_devices()
-	-- Lese geoposition ein
 	local geo = get_geolocation()
 	if geo[1] ~= nil or geo[2] ~= nil then
-		io.stderr:write('Router hat position\n')
-		-- Hole hood anhand von geokoordinaten
 		local geo_hood = gethood_by_geo(jhood, geo)
-		-- Prüfe hood auf fehler
 		if geo_hood ~= nil then
-			io.stderr:write('Hole hood bei position\n')
 			local no_error = set_hoodconfig(geo_hood,radios)
 			if no_error then
-				io.stderr:write('setze hood bei position\n')
-				pid_clean()
-				os.exit(0)
+				io.stderr:write('Setting hood getting from position.\n')
+				exit()
 			end
-			io.stderr:write('setze hood bei position Fehler\n')
 			io.stderr:write('Error while setting new hood getting by geoposition.\n')
-			pid_clean()
-			os.exit(0)
+			exit()
 		end
-		io.stderr:write('Hole hood bei position Fehlerhaft\n')
-		io.stderr:write('no default hood has been defined or the hoodfile dont have any hoods.\n')
-		pid_clean()
-		os.exit(0)
+		io.stderr:write('No hood has been defined for current position.\n')
+		local defaultHood = get_default_hood(jhood)
+		if defaultHood ~= nil then
+			local no_error = set_hoodconfig(defaultHood, radios)
+			if no_error then
+				io.stderr:write('Setting defaulthood.\n')
+				exit()
+			end
+			io.stderr:write('Error while setting defaulthood.\n')
+			exit()
+		end
+		io.stderr:write('No defaulthood has been defined.\n')
+		exit()
 	end
-	io.stderr:write('Router hat keine position\n')
+	io.stderr:write('Router dont have a position.\n')
 	if get_gw_range() then
-		io.stderr:write('Batman GWs in reichweite\n')
-		pid_clean()
-		os.exit(0)
+		exit()
 	end
-	io.stderr:write('Batman GWs nicht in reichweite\n')
 	if next(radios) then
-		io.stderr:write('WLAN-Scan nach nachbar freifunk Routern\n')
 		local scan_bssid = get_neigbour_bssid(radios)
 		if scan_bssid ~= nil then
 			local bssid_hood = gethood_by_bssid(jhood, scan_bssid)
 			if bssid_hood ~= nil then
-				io.stderr:write('Hole hood bei bssid\n')
 				local no_error = set_hoodconfig(bssid_hood,radios)
 				if no_error then
-					io.stderr:write('setze hood bei bssid\n')
-					pid_clean()
-					os.exit(0)
+					io.stderr:write('Setting hood getting from bssid.\n')
+					exit()
 				end
-				io.stderr:write('setze hood bei bssid Fehler\n')
 				io.stderr:write('Error while setting new hood getting by bssid.\n')
-				pid_clean()
-				os.exit(0)
+				exit()
 			end
-			io.stderr:write('Hole hood bei bssid Fehler\n')
-			io.stderr:write('no default hood has been defined or the hoodfile dont have any hoods.\n')
-			pid_clean()
-			os.exit(0)
+			io.stderr:write('No hood has been defined for scanned bssid.\n')
+			exit()
 		end
 	end
-	io.stderr:write('WLAN-Scan nach nachbar freifunk Routern Fehler\n')
-
-	-- if everything failed, get default hood
-	local defaultHood = get_default_hood(jhood)
-	-- configure the router for the default hood and exit
-	if not ( defaultHood == nil ) then
-		set_hoodconfig(defaultHood, radios)
-		pid_clean()
-		os.exit(0)
-	end
+	io.stderr:write('There ara no wifi chipsets detected.\n')
+	exit()
 end
-io.stderr:write('Lese Hoodfile Fehler\n')
--- Fehler beim einlesen der Hooddatei
 io.stderr:write('There seems to have gone something wrong while reading hoodfile from ' .. file .. '\n')
-pid_clean()
-os.exit(0)
+exit()
