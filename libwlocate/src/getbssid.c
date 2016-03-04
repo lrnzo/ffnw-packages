@@ -152,12 +152,3 @@ int * getMeshBssid (){
 
     return bssid;
 }
- 
-int main (int argc, const char * argv[])
-{
-	int* bssid = getMeshBssid();
-	for(int i = 0; i < 6; i++){
-	    printf("%02x\n", bssid[i]);
-	}
-
-}
