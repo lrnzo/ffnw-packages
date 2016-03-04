@@ -113,54 +113,42 @@ static const char * match_regex (regex_t * r, const char * to_match)
     }
     return "";
 }
+
+int * getMeshBssid (){
+printf("####");
+    static int bssid[8];
+    printf("####");
+
+    regex_t r;
+    const char * regex_text;
+    const char * result;
+    regex_text = ".*?option bssid '(.*)'";
+
+    FILE *f = fopen("/etc/config/wireless", "rb");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char *string = malloc(fsize + 1);
+    fread(string, fsize, 1, f);
+    fclose(f);
+
+    string[fsize] = 0;
+    printf("####");
+    printf("%s",string);
+
+    compile_regex(& r, regex_text);
+    result = match_regex(& r, string);
+    regfree (& r);
+
+    pintf("\n%s\n",result);
+
+    return bssid;
+}
  
 int main (int argc, const char * argv[])
 {
-	regex_t r;
-	const char * regex_text; 
-	const char * result;
-	regex_text = ".*?option bssid '(.*)'";
-	
-	FILE *f = fopen("/etc/config/wireless", "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);
+    printf("####");
+	getMeshBssid();
 
-	char *string = malloc(fsize + 1);
-	fread(string, fsize, 1, f);
-	fclose(f);
-
-	string[fsize] = 0;
-
-	//printf("%s",string);
-	
-	compile_regex(& r, regex_text);
-    result = match_regex(& r, string);
-    regfree (& r);
-	
-	printf("\n%s\n",result);
-
-	
-	
-	
-   /*char ch, file_name[25];
-   char msgbuf[1000];
-   FILE *fp;
- 
-   printf("Read file\n");
- 
-   fp = fopen("/etc/config/wireless","r"); // read mode
- 
-   if( fp == NULL )
-   {
-      perror("Error while opening the file.\n");
-      exit(EXIT_FAILURE);
-   }
-
- 
-   while( ( ch = fgetc(fp) ) != EOF )
-      printf("%c",ch);
- 
-   fclose(fp);
-   return 0;*/
 }
