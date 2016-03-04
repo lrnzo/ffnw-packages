@@ -31,6 +31,7 @@
 #include "wlan.h"
 #include "assert.h"
 #include "errno.h"
+#include "getbssid.h"
 
 
 WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,double *lat,double *lon,char *quality,short *ccode)
@@ -39,6 +40,9 @@ WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,
    char            head[500+1];
    char            data[500+1];
    char            responseOK=0;
+   int*            ownBssid;
+
+   ownBssid = getMeshBssid();
 
    setlocale(LC_ALL,"C");
    sock=tcp_connect_to(domain);
@@ -55,12 +59,12 @@ WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,
       if (request->bssids[i][0]+request->bssids[i][1]+request->bssids[i][2]+request->bssids[i][3]+request->bssids[i][4]+request->bssids[i][5]>0)
       {
           //Skip MESH BSSID: 02:CA:FF:EE:BA:BF
-          if(   request->bssids[i][0] != 0x02 
-             && request->bssids[i][1] != 0xCA
-             && request->bssids[i][2] != 0xFF
-             && request->bssids[i][3] != 0xEE
-             && request->bssids[i][4] != 0xBA
-             && request->bssids[i][5] != 0xBE){
+          if(   request->bssids[i][0] != ownBssid[0]
+             && request->bssids[i][1] != ownBssid[1]
+             && request->bssids[i][2] != ownBssid[2]
+             && request->bssids[i][3] != ownBssid[3]
+             && request->bssids[i][4] != ownBssid[4]
+             && request->bssids[i][5] != ownBssid[5]){
             snprintf(data + strlen(data), 500 - strlen(data),
                         "%02X%02X%02X%02X%02X%02X\r\n",
                         request->bssids[i][0],request->bssids[i][1],request->bssids[i][2],
