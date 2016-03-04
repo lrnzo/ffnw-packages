@@ -120,7 +120,7 @@ int * getMeshBssid (){
     regex_t r;
     const char * regex_text;
     const char * result;
-    regex_text = ".*?option bssid '(.*)'";
+    regex_text = ".*option bssid '(.*)'.*";
 
     FILE *f = fopen("/etc/config/wireless", "rb");
     fseek(f, 0, SEEK_END);
@@ -138,7 +138,7 @@ int * getMeshBssid (){
     result = match_regex(& r, string);
     regfree (& r);
 
-    pintf("\n%s\n",result);
+    printf("\n%s\n",result);
 
     return bssid;
 }
