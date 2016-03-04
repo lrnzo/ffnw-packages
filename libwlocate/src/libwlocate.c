@@ -59,12 +59,17 @@ WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,
       if (request->bssids[i][0]+request->bssids[i][1]+request->bssids[i][2]+request->bssids[i][3]+request->bssids[i][4]+request->bssids[i][5]>0)
       {
           //Skip MESH BSSID: 02:CA:FF:EE:BA:BF
-          if(   request->bssids[i][0] != ownBssid[0]
-             && request->bssids[i][1] != ownBssid[1]
-             && request->bssids[i][2] != ownBssid[2]
-             && request->bssids[i][3] != ownBssid[3]
-             && request->bssids[i][4] != ownBssid[4]
-             && request->bssids[i][5] != ownBssid[5]){
+          if(   request->bssids[i][0] == ownBssid[0]
+             && request->bssids[i][1] == ownBssid[1]
+             && request->bssids[i][2] == ownBssid[2]
+             && request->bssids[i][3] == ownBssid[3]
+             && request->bssids[i][4] == ownBssid[4]
+             && request->bssids[i][5] == ownBssid[5]){
+
+                //SKIP
+
+          }
+          else {
             snprintf(data + strlen(data), 500 - strlen(data),
                         "%02X%02X%02X%02X%02X%02X\r\n",
                         request->bssids[i][0],request->bssids[i][1],request->bssids[i][2],
