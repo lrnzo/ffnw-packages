@@ -115,9 +115,7 @@ static const char * match_regex (regex_t * r, const char * to_match)
 }
 
 int * getMeshBssid (){
-printf("####");
     static int bssid[8];
-    printf("####");
 
     regex_t r;
     const char * regex_text;
@@ -134,7 +132,6 @@ printf("####");
     fclose(f);
 
     string[fsize] = 0;
-    printf("####");
     printf("%s",string);
 
     compile_regex(& r, regex_text);
@@ -148,7 +145,6 @@ printf("####");
  
 int main (int argc, const char * argv[])
 {
-    printf("####");
 	getMeshBssid();
 
 }
