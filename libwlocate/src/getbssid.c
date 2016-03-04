@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <regex.h> 
+#include <regex.h>
 
 /* The following is the size of a buffer to contain any error messages
    encountered when the regular expression is compiled. */
@@ -132,19 +132,32 @@ int * getMeshBssid (){
     fclose(f);
 
     string[fsize] = 0;
-    printf("%s",string);
 
     compile_regex(& r, regex_text);
     result = match_regex(& r, string);
     regfree (& r);
 
-    printf("\n%s\n",result);
+    char * str = strdup(result);
+
+    char* tok;
+    tok = strtok(str, ":");
+
+    int number = (int)strtol(tok, NULL, 16);
+    bssid[0] = number;
+    for(int i = 1 ; i < 6 ; i++){
+        tok = strtok(NULL, ":");
+        int number = (int)strtol(tok, NULL, 16);
+        bssid[i] = number;
+    }
 
     return bssid;
 }
  
 int main (int argc, const char * argv[])
 {
-	getMeshBssid();
+	int* bssid = getMeshBssid();
+	for(int i = 0; i < 6; i++){
+	    printf("%02x\n", bssid[i]);
+	}
 
 }
