@@ -144,7 +144,8 @@ int * getMeshBssid (){
 
     int number = (int)strtol(tok, NULL, 16);
     bssid[0] = number;
-    for(int i = 1 ; i < 6 ; i++){
+    int i;
+    for(i = 1 ; i < 6 ; i++){
         tok = strtok(NULL, ":");
         int number = (int)strtol(tok, NULL, 16);
         bssid[i] = number;
