@@ -8,7 +8,7 @@ EXECUTABLE=libwlocate.so
 
 LINK=$(CC) -shared -Wl,--no-as-needed
 
-OBJECTS = connect.o wlan.o libwlocate.o iwlist.o
+OBJECTS = connect.o wlan.o libwlocate.o iwlist.o getbssid.o
 
 default: $(EXECUTABLE)
 
