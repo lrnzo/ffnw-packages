@@ -14,7 +14,7 @@ char* substr (const char* string, int pos, int len, const char* replace)
     char* substring;
     int   i;
     int   length;
- 
+
     if (string == NULL)
         return NULL;
     length = strlen(string);
@@ -45,7 +45,7 @@ char* substr (const char* string, int pos, int len, const char* replace)
             substring[i] = string[pos];
         substring[i] = '\0';
     }
- 
+
     return substring;
 }
 
@@ -57,8 +57,8 @@ static int compile_regex (regex_t * r, const char * regex_text)
 {
     int status = regcomp (r, regex_text, REG_EXTENDED|REG_NEWLINE);
     if (status != 0) {
-	char error_message[MAX_ERROR_MSG];
-	regerror (status, r, error_message, MAX_ERROR_MSG);
+        char error_message[MAX_ERROR_MSG];
+        regerror (status, r, error_message, MAX_ERROR_MSG);
         printf ("Regex error compiling '%s': %s\n",
                  regex_text, error_message);
         return 1;
@@ -99,15 +99,13 @@ static const char * match_regex (regex_t * r, const char * to_match)
             finish = m[i].rm_eo + (p - to_match);
             if (i == 0) {
                 //printf ("$& is ");
-				//printf ("'%.*s' (bytes %d:%d)\n", (finish - start), to_match + start, start, finish);
+                //printf ("'%.*s' (bytes %d:%d)\n", (finish - start), to_match + start, start, finish);
             }
             else {
                 //printf ("$%d is ", i);
-				//printf ("'%.*s' (bytes %d:%d)\n", (finish - start), to_match + start, start, finish);
-				return substr(to_match, start, (finish - start), NULL);
+                //printf ("'%.*s' (bytes %d:%d)\n", (finish - start), to_match + start, start, finish);
+                return substr(to_match, start, (finish - start), NULL);
             }
-            
-			
         }
         p += m[0].rm_eo;
     }
