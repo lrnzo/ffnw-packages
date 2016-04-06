@@ -116,6 +116,11 @@ WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,
                tcp_closesocket(sock);
                return WLOC_LOCATION_ERROR;
             }
+            if (strstr(data,"quality=0"))
+            {
+               tcp_closesocket(sock);
+               return WLOC_LOCATION_ERROR;
+            }
             pos=strstr(data,"quality=");
             if (pos);
             {
