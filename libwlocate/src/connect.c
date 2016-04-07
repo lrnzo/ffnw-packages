@@ -23,27 +23,19 @@
 #include <unistd.h>
 
 
-#ifdef ENV_WINDOWS
- #include <winsock2.h>
- #define MSG_NOSIGNAL 0
-#else
- #include <sys/socket.h>
- #include <sys/types.h>
- #include <sys/ioctl.h>
- #include <netinet/in.h>
- #include <arpa/inet.h>
- #include <unistd.h>
- #include <netdb.h>
-#endif
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <netdb.h>
 
-#ifndef ENV_WINDOWSCE
- #include <fcntl.h>
- #include <errno.h>
-#else
- #ifndef EAGIAN
+
+
+#ifndef EAGIAN
   #define EAGAIN 11 // really the correct value? there is no errno.h for WinCE
  #endif
-#endif
 
 
 #ifdef ENV_QNX
@@ -53,12 +45,8 @@
 
 static int util_thread_sleep(int msecs)
 {
-#ifdef ENV_WINDOWS
-   Sleep(msecs);
-#else
-   usleep(msecs*1000);
-#endif
-   return msecs;
+    usleep(msecs*1000);
+    return msecs;
 }
 
 
@@ -98,13 +86,8 @@ int tcp_recv(int sock,char *data, int len,const char *termStr,long timeout)
       else if (rc==0) return readLen;
       else
       {
-#ifdef ENV_WINDOWS
-         err=GetLastError();
-         if ((err!=EAGAIN) && (err!=WSAEWOULDBLOCK))
-#else
          if ((errno!=EAGAIN) && (errno!=EINPROGRESS) && (errno!=0))
-#endif
-          return readLen;
+             return readLen;
          ctr+=10;
          util_thread_sleep(10);
       }
@@ -127,12 +110,7 @@ int tcp_send(int sock, const char *msg,int len,int msecs)
 {
    int    rlen=0;
    int    ctr=0,val;
-#ifdef ENV_WINDOWS
-   int    errno;
-#else
-
    errno=0;
-#endif
    while ((rlen<len) && (ctr<msecs))
    {
 #ifdef ENV_LINUX
@@ -143,20 +121,13 @@ int tcp_send(int sock, const char *msg,int len,int msecs)
       if (val>=0) rlen+=val;
       else
       {
-#ifndef ENV_WINDOWS
-         if (errno==EAGAIN) ctr-=2; // in case of eagain we expect a longer send-timeout
-#else
          errno=WSAGetLastError();
          if (errno==WSAEWOULDBLOCK) ctr-=2; // in case of eagain we expect a longer send-timeout
-#endif
          else if (errno!=0)
          {
             rlen=-1;
             break;
          }
-#ifndef ENV_WINDOWS
-         errno=0;
-#endif
       }
       if (rlen<len)
       {
@@ -176,15 +147,9 @@ Closes an opened socket connection
 */
 void tcp_closesocket (int sock)
 {
-#ifdef ENV_WINDOWS
-   shutdown(sock,SD_SEND);
-   shutdown(sock,SD_RECEIVE);
-   closesocket(sock);
-#else
-   shutdown(sock,SHUT_WR);
-   shutdown(sock,SHUT_RD);
-   if (close (sock)<0) perror("close failed");
-#endif
+    shutdown(sock,SHUT_WR);
+    shutdown(sock,SHUT_RD);
+    if (close (sock)<0) perror("close failed");
 }
 
 
@@ -247,15 +212,8 @@ void tcp_set_blocking(int sock,char block)
 {
    int flags;
 
-#ifndef ENV_WINDOWS
-   flags=fcntl(sock,F_GETFL, 0);
-   if (block) flags&=~O_NONBLOCK;
-   else flags|=O_NONBLOCK;
-   fcntl(sock,F_SETFL, flags);
-#else
    if (block) flags=0;
    else flags=13;
    ioctlsocket(sock,FIONBIO,(unsigned long*)&flags);
-#endif
 }
 

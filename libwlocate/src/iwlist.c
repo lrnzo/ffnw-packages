@@ -129,15 +129,6 @@ print_scanning_info(int		skfd,
   /* Avoid "Unused parameter" warning */
   args = args; count = count;
 
-  /* Debugging stuff */
-/*  if((IW_EV_LCP_PK2_LEN != IW_EV_LCP_PK_LEN) || (IW_EV_POINT_PK2_LEN != IW_EV_POINT_PK_LEN))
-    {
-      fprintf(stderr, "*** Please report to jt@hpl.hp.com your platform details\n");
-      fprintf(stderr, "*** and the following line :\n");
-      fprintf(stderr, "*** IW_EV_LCP_PK2_LEN = %zu ; IW_EV_POINT_PK2_LEN = %zu\n\n",
-	      IW_EV_LCP_PK2_LEN, IW_EV_POINT_PK2_LEN);
-    }*/
-
   /* Get range stuff */
   has_range = (iw_get_range_info(skfd, ifname, &range) >= 0);
 
@@ -160,69 +151,13 @@ print_scanning_info(int		skfd,
   /* Parse command line arguments and extract options.
    * Note : when we have enough options, we should use the parser
    * from iwconfig... */
-/*  while(count > 0)
-    {
-
-      count--;
-      
-      if(!strncmp(args[0], "essid", 5))
-	{
-	  if(count < 1)
-	    {
-	      fprintf(stderr, "Too few arguments for scanning option [%s]\n",
-		      args[0]);
-	      return(-1);
-	    }
-	  args++;
-	  count--;
-
-	  scanopt.essid_len = strlen(args[0]);
-	  memcpy(scanopt.essid, args[0], scanopt.essid_len);
-	  if(scanopt.bssid.sa_family == 0)
-	    {
-	      scanopt.bssid.sa_family = ARPHRD_ETHER;
-	      memset(scanopt.bssid.sa_data, 0xff, ETH_ALEN);
-	    }
-	  scanflags |= IW_SCAN_THIS_ESSID;
-	}
-      else
-	if(!strncmp(args[0], "last", 4))
-	  {
-	    scanflags |= IW_SCAN_HACK;
-	  }
-	else
-	  {
-	    fprintf(stderr, "Invalid scanning option [%s]\n", args[0]);
-	    return(-1);
-	  }
-
-      args++;
-    }*/
-
-  /* Check if we have scan options */
-/*  if(scanflags)
-    {
-      wrq.u.data.pointer = (caddr_t) &scanopt;
-      wrq.u.data.length = sizeof(scanopt);
-      wrq.u.data.flags = scanflags;
-    }
-  else*/
-    {
-      wrq.u.data.pointer = NULL;
-      wrq.u.data.flags = 0;
-      wrq.u.data.length = 0;
-    }
-
-  /* If only 'last' was specified on command line, don't trigger a scan */
-/*  if(scanflags == IW_SCAN_HACK)
-    {
-      tv.tv_usec = 0;
-    }
-  else*/
-    {
-      /* Initiate Scanning */
-      if(iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0)
-	{
+    wrq.u.data.pointer = NULL;
+    wrq.u.data.flags = 0;
+    wrq.u.data.length = 0;
+    
+    
+    /* Initiate Scanning */
+    if(iw_set_ext(skfd, ifname, SIOCSIWSCAN, &wrq) < 0){
 	  if((errno != EPERM) || (scanflags != 0))
 	    {
 	      fprintf(stderr, "%-8.16s  Interface doesn't support scanning : %s\n\n",
@@ -238,7 +173,7 @@ print_scanning_info(int		skfd,
 #endif
 	  tv.tv_usec = 0;
 	}
-    }
+    
   timeout -= tv.tv_usec;
 
   /* Forever */

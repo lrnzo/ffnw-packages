@@ -20,11 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
-#ifndef ENV_WINDOWS
- #include <arpa/inet.h>
-#else
- #define snprintf _snprintf
-#endif
+#define snprintf _snprintf
 
 #include "libwlocate.h"
 #include "connect.h"
@@ -159,13 +155,11 @@ WLOC_EXT_API int get_position(const char *domain,const struct wloc_req *request,
    return WLOC_OK;
 }
 
-
 /** please refer to libwlocate.h for a description of this function! */
 WLOC_EXT_API int wloc_get_location(double *lat,double *lon,char *quality,short *ccode)
 {
    return wloc_get_location_from("openwlanmap.org",lat,lon,quality,ccode);
 }
-
 
 /** please refer to libwlocate.h for a description of this function! */
 WLOC_EXT_API int wloc_get_location_from(const char *domain,double *lat,double *lon,char *quality,short *ccode)
@@ -177,38 +171,12 @@ WLOC_EXT_API int wloc_get_location_from(const char *domain,double *lat,double *l
    int             ret=0;
 
    memset((char*)&request,0,sizeof(struct wloc_req));
-//#ifdef ENV_LINUX
-   // for Linux we have some special handling because only root has full access to the WLAN-hardware:
-   // there a wlocd-daemon may run with root privileges, so we try to connect to it and receive the
-   // BSSID data from there. Only in case this fails the way via iwtools is used 
-   //sock=tcp_connect_to("localhost");
-/*   if (sock>0)
-   {
-   	ret=tcp_recv(sock,(char*)&request,sizeof(struct wloc_req),NULL,7500);
-   	tcp_closesocket(sock);
-   	if (ret==sizeof(struct wloc_req))
-   	{
-   		ret=0;
-   		for (i=0; i<WLOC_MAX_NETWORKS; i++)
-   		{
-   			if (request.bssids[i][0]+request.bssids[i][1]+request.bssids[i][2]+
-   			    request.bssids[i][3]+request.bssids[i][4]+request.bssids[i][5]>0) ret++;
-   		}
-   	}
-   }*/
-/*#else
-   ret=0;   
-#endif
-   if (ret==0)
-   {*/
+
       if (wloc_get_wlan_data(&request)<2)
       {
          wloc_get_wlan_data(&request); // try two times in case the device was currently used or could not find all networks
          // in case of no success request localisation without WLAN data
       }
-//   }
-//   for (i=0; i<WLOC_MAX_NETWORKS; i++)
-//    printf("BSSID: %02X:%02X:%02X:%02X:%02X:%02X Signal: %d\n",request.bssids[i][0] & 0xFF,request.bssids[i][1] & 0xFF,request.bssids[i][2] & 0xFF,
-//                                                               request.bssids[i][3] & 0xFF,request.bssids[i][4] & 0xFF,request.bssids[i][5] & 0xFF,request.signal[i]);
+   request.bssids[i][3] & 0xFF,request.bssids[i][4] & 0xFF,request.bssids[i][5] & 0xFF,request.signal[i]);
    return get_position(domain,&request,lat,lon,quality,ccode);
 }

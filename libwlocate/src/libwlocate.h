@@ -23,10 +23,6 @@
  #define ENV_LINUX
 #endif
 
-#if defined _MSC_VER && !defined ENV_WINDOWS
- #define ENV_WINDOWS
-#endif
-
 #ifndef WLOC_EXT_API
  #ifdef ENV_LINUX
   #define WLOC_EXT_API extern
@@ -36,19 +32,12 @@
   #define WLOC_EXT_API extern
  #endif
 
- #ifdef ENV_WINDOWS
-  #define WLOC_EXT_API __declspec(dllexport)
- #endif
 #endif
 
 #ifndef __cplusplus
  typedef unsigned char bool;
  #define false 0
  #define true  1
-#endif
-
-#ifdef ENV_WINDOWS
- #include <windows.h>
 #endif
 
 #ifdef ENV_QNX
