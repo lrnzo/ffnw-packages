@@ -23,8 +23,8 @@ define Package/lua-dkjson/description
 endef
 
 define Build/Prepare
+#ToDo Create workaround for lua minifier
 	$(PKG_UNPACK)
-	luamin -f $(PKG_BUILD_DIR)/dkjson.lua > 'dkjson-min.lua'
 endef
 
 
@@ -36,7 +36,7 @@ endef
 
 define Package/lua-dkjson/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/
-	$(INSTALL_DATA) ./dkjson-min.lua $(1)/usr/lib/lua/dkjson.lua
+	$(INSTALL_DATA) ./dkjson.lua $(1)/usr/lib/lua/dkjson.lua
 endef
 
 $(eval $(call BuildPackage,lua-dkjson))
