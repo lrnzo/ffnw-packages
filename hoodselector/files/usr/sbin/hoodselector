@@ -331,35 +331,38 @@ end
 local jhood = readhoodfile(file)
 if jhood ~= nil then
 	local radios = get_wifi_devices()
-	local geo = get_geolocation()
-	if geo[1] ~= nil or geo[2] ~= nil then
-		local geo_hood = gethood_by_geo(jhood, geo)
-		if geo_hood ~= nil then
-			local no_error = set_hoodconfig(geo_hood,radios)
-			if no_error then
-				io.stderr:write('Setting hood getting from position.\n')
-				exit()
-			end
-			io.stderr:write('Error while setting new hood getting by geoposition.\n')
-			exit()
-		end
-		io.stderr:write('No hood has been defined for current position.\n')
-		local defaultHood = get_default_hood(jhood)
-		if defaultHood ~= nil then
-			local no_error = set_hoodconfig(defaultHood, radios)
-			if no_error then
-				io.stderr:write('Setting defaulthood.\n')
-				exit()
-			end
-			io.stderr:write('Error while setting defaulthood.\n')
-			exit()
-		end
-		io.stderr:write('No defaulthood has been defined.\n')
-		exit()
-	end
-	io.stderr:write('Router dont have a position.\n')
 	if get_gw_range() then
-		exit()
+		-- check if fastd running
+		if ( uci:get('fastd', 'mesh_vpn', 'enabled') == '1' ) then
+			os.execute('/etc/init.d/fastd start')
+		end
+		local geo = get_geolocation()
+		if geo[1] ~= nil or geo[2] ~= nil then
+			local geo_hood = gethood_by_geo(jhood, geo)
+			if geo_hood ~= nil then
+				local no_error = set_hoodconfig(geo_hood,radios)
+				if no_error then
+					io.stderr:write('Setting hood getting from position.\n')
+					exit()
+				end
+				io.stderr:write('Error while setting new hood getting by geoposition.\n')
+				exit()
+			end
+			io.stderr:write('No hood has been defined for current position.\n')
+			local defaultHood = get_default_hood(jhood)
+			if defaultHood ~= nil then
+				local no_error = set_hoodconfig(defaultHood, radios)
+				if no_error then
+					io.stderr:write('Setting defaulthood.\n')
+					exit()
+				end
+				io.stderr:write('Error while setting defaulthood.\n')
+				exit()
+			end
+			io.stderr:write('No defaulthood has been defined.\n')
+			exit()
+		end
+		io.stderr:write('Router dont have a position.\n')
 	end
 	if next(radios) then
 		local scan_bssid = get_neigbour_bssid(radios)
@@ -375,6 +378,29 @@ if jhood ~= nil then
 				exit()
 			end
 			io.stderr:write('No hood has been defined for scanned bssid.\n')
+			-- Stop fastd
+			os.execute('/etc/init.d/fastd stop')
+			-- Set BSSID without hood
+			local if_change = false
+			for index, radio in ipairs(radios) do
+				if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == scan_bssid ) then
+						uci:section('wireless', 'wifi-iface', 'ibss_' .. radio,
+							{
+								bssid = scan_bssid
+							}
+						)
+						if_change = true
+				end
+			end
+			if if_change then
+				uci:save('wireless')
+				uci:commit('wireless')
+				os.execute('wifi')
+			end
+			-- Wait 15 seconds while meshing its creates
+			os.execute("sleep " .. tonumber(17))
+			-- run autoupdater in backround and exit hoodselector
+			os.execute('autoupdater -f &')
 			exit()
 		end
 	end
