@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
   SECTION:=networke
   CATEGORY:=Freifunk Nordwest
   TITLE:=Select the hoods depending on the geo coordinate
-  DEPENDS:=+lwtrace +libwlocate +ffnw-hoods
+  DEPENDS:=+lwtrace +libwlocate +ffnw-hoods +dkjson
 endef
 
 define Package/$(PKG_NAME)/description
