@@ -228,7 +228,7 @@ local function set_hoodconfig(hood,radios)
 					for index1,server in pairs(serverlist) do
 						if index1:match("host") then
 							local hoodserver = server:split('.')
-							if config_index == 'mesh_vpn_backbone_peer_'..hoodserver[1] then
+							if config_index == 'mesh_vpn_backbone_peer_'..hoodserver[1]..'_'..serverlist['port'] then
 								remove = false
 								hood_server = index0
 								if not ( config_peer.key == serverlist['publickey'] ) then
@@ -291,26 +291,26 @@ local function set_hoodconfig(hood,radios)
 		end
 	end
 	for hoodconf,val in pairs(hood) do
-		if hoodconf:match("servers") then
-			for index0,serverlist in pairs(val) do
-				local group = 'mesh_vpn_backbone'
-				local name = serverlist.host:split('.')
-				name = name[1]
-				local remote = {}
-				table.insert(remote, '\"'..serverlist.host..'\"'..' port '..serverlist.port)
-				uci:section('fastd', 'peer', group .. '_peer_' .. name,
-					{
-						enabled = 1,
-						net = 'mesh_vpn',
-						group = group,
-						key = serverlist.publickey,
-						remote = remote
-					}
-				)
-				change = true
-			end
-		end
-	end
+        if hoodconf:match("servers") then
+            for index0,serverlist in pairs(val) do
+                local group = 'mesh_vpn_backbone'
+                local name = serverlist.host:split('.')
+                name = name[1]
+                local remote = {}
+                table.insert(remote, '\"'..serverlist.host..'\"'..' port '..serverlist.port)
+                uci:section('fastd', 'peer', group .. '_peer_' .. name .. '_' .. serverlist.port,
+                    {
+                        enabled = 1,
+                        net = 'mesh_vpn',
+                        group = group,
+                        key = serverlist.publickey,
+                        remote = remote
+                    }
+                )
+                change = true
+            end
+        end
+    end
 	if change then
 		uci:save('fastd')
 		uci:commit('fastd')
