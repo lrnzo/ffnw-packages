@@ -55,14 +55,14 @@ local function readHoodfile(file)
 end
 
 -- Program terminating function including removing of PID file
-local function exit()                                                                 
-  if io.open(pidPath, "r") ~=nil then                                           
-    os.remove(pidPath)                                                          
-  end                                                                           
-  os.exit(0)                                                                    
+local function exit()
+  if io.open(pidPath, "r") ~=nil then
+    os.remove(pidPath)
+  end
+  os.exit(0)
 end
 
--- Return a wifi device list                                                    
+-- Return a wifi device list
 local function getWifiDevices()
   local radios = {}
   uci:foreach('wireless', 'wifi-device',
