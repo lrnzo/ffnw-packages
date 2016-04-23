@@ -5,18 +5,31 @@
 -- The job of the hoodselector is to automatically detect in which hood
 -- the router is located based on geo settings or by scanning its environment.
 -- Based on these informations the hoodselector should select a hood from a
--- list of known hoods (hoodlist) and adjust vpn, wireless configuration based
--- on the settings given for the selected hood.
+-- list of known hoods (hoodlist) and adjust vpn, wireless and mesh on lan (TODO)
+-- configuration based on the settings given for the selected hood.
 --
 -- The hoodlist containing all hood settings is located in a seperate hoodfile
 -- in the hoods package.
 --
 -- The hoodselector depends on the folowing additional software:
---  * fastd (vpn configuration)
---  * iw (wireless network scanning)
---  * batman-adv as a mesh protocol
+--  * fastd (vpn configuration) see getCurrentPeers(), setHoodVPN()
+--  * iw (wireless network scanning) see getNeigbourBssid()
+--  * batman-adv (mesh protocol) see directVPN(), getGwRange()
+--  * lwtrace (geolocator) see getGeolocation()
+--
+--  To detect the current hood the hoodselector knows 2 modes containing
+--  * 1. Default mode (VPN Router)
+--    - set real hood dependent on geo position.
+--    - set default hood dependent on geo position.
+--  * 2. Scan modes
+--   - Set wifi conf on scanned BSSID
+--   - Set vpn conf getting by BSSID (if no VPN conf exsist disable fastd)
+-- When selecting a hood, the hoodselector has the following priorities:
+--   1. Selecting a hood by geo position depending on direct VPN connection.
+--   2. force creating one mesh cloud with neigbour mesh routers
+--   3. if routers had only mesh setting vpn config depends on the BSSID
 
--- PID file to ensure the hoodselector isn't running parallels
+-- PID file to ensure the hoodselector isn't running parallel
 local pidPath="/var/run/hoodselector.pid"
 
 if io.open(pidPath, "r") ~=nil then
@@ -32,7 +45,6 @@ local file = '/lib/ffnw/hoods/hoods.json'
 -- initialization done
 
 -- Read the full hoodfile. Return nil for wrong format or no such file
--- return nil for error
 local function readHoodfile(file)
   local obj, pos, err = json.decode (io.popen(string.format("cat %s",file), 'r'):read('*a'), 1, nil)
   if err then
@@ -97,7 +109,7 @@ local function getGeolocation()
   return ret
 end
 
--- Return hood from the hood file based on geo position or nil
+-- Return hood from the hood file based on geo position or nil, no real hood could be determined
 local function getHoodByGeo(jhood,geo)
   for n, h in pairs(jhood) do
     for n, box in pairs(h.boxes) do
@@ -109,9 +121,11 @@ local function getHoodByGeo(jhood,geo)
   return nil
 end
 
--- TESTING set Bssid from hood return true if setting correctliy
+-- reconfigures the bssid if needed
+-- returns true
+-- returns false for error while setting bssid via UCI
 local function setHoodWifi(hoodBssid,radios)
-  local ret = false
+  local ret = true
   local change = false
   for index, radio in ipairs(radios) do
     if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == hoodBssid) then
@@ -162,7 +176,10 @@ local function getCurrentPeers()
   return configPeers
 end
 
--- TESTING set VPN config from hood return true if set correctliy
+-- This method sets a new fastd config and takes care that services are only
+-- stopped or restarted if reconfiguration is needed.
+-- return true
+-- return false for getting error while setting config via UCI
 local function setHoodVPN(hood)
   local change = false
   local uciError = false
@@ -208,8 +225,8 @@ local function setHoodVPN(hood)
       uci:delete('fastd',configIndex)
       change = true
     else
-      if hoodserver ~= nil then
-	table.remove(val,hoodserver)
+      if hoodserver0 ~= nil then
+	table.remove(hood.servers,hoodserver0)
       end
     end
   end
@@ -241,7 +258,10 @@ local function setHoodVPN(hood)
   return true
 end
 
--- get default Hood
+-- Return the default hood in the hood list.
+-- This method can return the following data:
+-- * default hood
+-- * nil if no default hood has been defined
 local function getDefaultHood(jhood)
   for n, h in pairs(jhood) do
     if h.defaulthood then
@@ -251,7 +271,7 @@ local function getDefaultHood(jhood)
   return nil
 end
 
---Load bssid history
+-- Load bssid history
 local function bssid_hist_load( sfile )
   local bssid_his = {}
   for line in io.popen(string.format("cat %s 2> /dev/null",sfile),'r'):lines() do
@@ -262,8 +282,8 @@ local function bssid_hist_load( sfile )
   return bssid_his
 end
 
---Save bssid history
-function bssid_hist_save( tbl,filename )
+-- Save bssid history
+local function bssid_hist_save( tbl,filename )
   local file,err = io.open( filename, "wb" )
   if err then return err end
   for idx,str in ipairs( tbl ) do
@@ -362,10 +382,7 @@ if directVPN() then
     io.stderr:write('No hood has been defined for current position.\n')
     local defaultHood = getDefaultHood(jhood)
     if defaultHood ~= nil then
-      local w = setHoodWifi(defaultHood.bssid,radios)
-      local v = setHoodVPN(defaultHood)
-      io.stderr:write("" .. w .. " | " .. v .. "")
-      if w and v then
+      if setHoodWifi(defaultHood.bssid,radios) and setHoodVPN(defaultHood) then
 	io.stderr:write('Setting defaulthood.\n')
 	exit()
       end
@@ -383,9 +400,10 @@ if next(radios) then
     if not getGwRange() then
       if setHoodWifi(scanBssid,radios) then
         io.stderr:write('Setting Bssid getting from Scan.\n')
+      else
+        io.stderr:write('Error while setting Bssid getting from Scan.\n')
+        exit()
       end
-      io.stderr:write('Error while setting Bssid getting from Scan.\n')
-      exit()
     end
 
     -- Set VPN config getting by BSSID
@@ -393,6 +411,9 @@ if next(radios) then
     if bssidHood ~= nil then
       if setHoodVPN(bssidHood) then
 	io.stderr:write('Setting hood getting from bssid.\n')
+	if ( uci:get('fastd', 'mesh_vpn', 'enabled') == '1' ) then
+	  os.execute('/etc/init.d/fastd start 2> /dev/null')
+	end
 	exit()
       end
       io.stderr:write('Error while setting new hood getting by bssid.\n')
