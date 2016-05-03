@@ -1,0 +1,66 @@
+[
+  {
+    "name": "default",
+    "description": "This is the default hood.",
+    "bssid": "02:CA:FF:EE:BA:BF",
+    "defaulthood": true,
+    "servers": [
+      {
+        "host": "default01.sn.ffnw.de",
+        "port": "11111",
+        "publickey": "32a02dd5e6b9233926e178ac609023ad30bcf26954d38d410088bbdc0b2258cb"
+      },
+      {
+        "host": "default02.sn.ffnw.de",
+        "port": "11111",
+        "publickey": "9737c65a17cfaa8339315ee53d2b9e02520733780362efacf9503737f5a23204"
+      },
+      {
+        "host": "default03.sn.ffnw.de",
+        "port": "11111",
+        "publickey": "18199a10620dbd13728a09402ca2364436ca27e46e669a2ebdfe20976dc45e6f"
+      },
+      {
+        "host": "default04.sn.ffnw.de",
+        "port": "11111",
+        "publickey": "5c1738236ba6930f654fd5e815e0c63ac03f81551ee2b183045b256fb133f77d"
+      },
+      {
+        "host": "default05.sn.ffnw.de",
+        "port": "11111",
+        "publickey": "22e270ff9b2d1017c3a0b00dd22a58ef7e5915a355eeb16f0b8b52d7eb377869"
+      }
+    ],
+    "boxes": []
+  },
+  {
+    "name": "osna",
+    "description": "Osnabrueck and region",
+    "bssid": "02:CA:FF:EE:BA:AA",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "osna01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "ba21772b6f858fcbdf897121ced4bb3c277721f640dda9743166252cc66278f2"
+      },
+      {
+        "host": "osna02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "4d1eb91cb01aeb3ef16b61ac77832f29b8e190ff6ace9253bc060427675f86bc"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          52.03,
+          7.01
+        ],
+        [
+          52.53,
+          8.52
+        ]
+      ]
+    ]
+  }
+]
