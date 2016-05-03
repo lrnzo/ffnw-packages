@@ -1,411 +1,428 @@
 #!/usr/bin/lua
 
+-- This is the hoodselector. The hoodselector is one of the main components for
+-- splitting a layer 2 mesh network into seperated network segments (hoods).
+-- The job of the hoodselector is to automatically detect in which hood
+-- the router is located based on geo settings or by scanning its environment.
+-- Based on these informations the hoodselector should select a hood from a
+-- list of known hoods (hoodlist) and adjust vpn, wireless and mesh on lan (TODO)
+-- configuration based on the settings given for the selected hood.
+--
+-- The hoodlist containing all hood settings is located in a seperate hoodfile
+-- in the hoods package.
+--
+-- The hoodselector depends on the folowing additional software:
+--  * fastd (vpn configuration) see getCurrentPeers(), setHoodVPN()
+--  * iw (wireless network scanning) see getNeigbourBssid()
+--  * batman-adv (mesh protocol) see directVPN(), getGwRange()
+--  * lwtrace (geolocator) see getGeolocation()
+--
+--  To detect the current hood the hoodselector knows 2 modes containing
+--  * 1. Default mode (VPN Router)
+--    - set real hood dependent on geo position.
+--    - set default hood dependent on geo position.
+--  * 2. Scan modes
+--   - Set wifi conf on scanned BSSID
+--   - Set vpn conf getting by BSSID (if no VPN conf exsist disable fastd)
+-- When selecting a hood, the hoodselector has the following priorities:
+--   1. Selecting a hood by geo position depending on direct VPN connection.
+--   2. force creating one mesh cloud with neigbour mesh routers
+--   3. if routers had only mesh setting vpn config depends on the BSSID
+
+-- PID file to ensure the hoodselector isn't running parallel
 local pidPath="/var/run/hoodselector.pid"
 
 if io.open(pidPath, "r") ~=nil then
-	io.stderr:write("The hoodselector is still running.\n")
-	os.exit(1)
+  io.stderr:write("The hoodselector is still running.\n")
+  os.exit(1)
 else
-	io.close(io.open(pidPath, "w"))
-end
-
-function pid_clean()
-	if io.open(pidPath, "r") ~=nil then
-		os.remove(pidPath)
-	end
+  io.close(io.open(pidPath, "w"))
 end
 
 local json = require ("dkjson")
-local file = '/lib/ffnw/hoods/hoods.json'
 local uci = require('luci.model.uci').cursor()
+local file = '/lib/ffnw/hoods/hoods.json'
+-- initialization done
 
 -- Read the full hoodfile. Return nil for wrong format or no such file
-local function readhoodfile(file)
-	local obj, pos, err = json.decode (io.popen(string.format("cat %s",file), 'r'):read('*a'), 1, nil)
-	if err then
-		return nil
-	else
-		return obj
-	end
+local function readHoodfile(file)
+  local obj, pos, err = json.decode (io.popen(string.format("cat %s",file), 'r'):read('*a'), 1, nil)
+  if err then
+    return nil
+  else
+    return obj
+  end
+end
+
+-- Program terminating function including removing of PID file
+local function exit()
+  if io.open(pidPath, "r") ~=nil then
+    os.remove(pidPath)
+  end
+  os.exit(0)
 end
 
 -- Return a wifi device list
-local function get_wifi_devices()
-	local radios = {}
-	uci:foreach('wireless', 'wifi-device',
-		function(s)
-			table.insert(radios, s['.name'])
-		end
-	)
-	return radios
+local function getWifiDevices()
+  local radios = {}
+  uci:foreach('wireless', 'wifi-device',
+    function(s)
+      table.insert(radios, s['.name'])
+    end
+  )
+  return radios
+end
+
+-- bool if direct VPN
+local function directVPN()
+  for outgoingIF in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
+    if outgoingIF:match("[  " .. uci:get('fastd', 'mesh_vpn_backbone', 'net') .. " ]") then
+      return true
+    end
+  end
+  return false
 end
 
 -- Get Geoposition if no static position present try lwtrace. Return nil for no position
-local function get_geolocation()
-	local lat = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'latitude')
-	local lng = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'longitude')
-	if ( lat == nil or lng == nil ) then
-		for scan in io.popen(string.format("lwtrace -t 2> /dev/null"), 'r'):lines() do
-			if string.find(scan,"(lat)") then
-				local last_val = nil
-				for geo in string.gmatch(scan,"[^%s]+") do
-					if geo == '(lat)' then
-						lat = last_val
-					end
-					if geo == '(lon)' then
-						lng = last_val
-					end
-					last_val = geo
-				end
-			end
-		end
+local function getGeolocation()
+  local lat = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'latitude')
+  local lng = uci:get('gluon-node-info', uci:get_first('gluon-node-info', 'location'), 'longitude')
+  if ( lat == nil or lng == nil ) then
+    for scan in io.popen(string.format("lwtrace -t 2> /dev/null"), 'r'):lines() do
+      if string.find(scan,"(lat)") then
+	local last_val = nil
+	for geo in string.gmatch(scan,"[^%s]+") do
+	  if geo == '(lat)' then
+	    lat = last_val
+	  end
+	  if geo == '(lon)' then
+	    lng = last_val
+	  end
+	  last_val = geo
 	end
-	local ret = {}
-	table.insert(ret, tonumber(lat))
-	table.insert(ret, tonumber(lng))
-	return ret
+      end
+    end
+  end
+  local ret = {}
+  table.insert(ret, tonumber(lat))
+  table.insert(ret, tonumber(lng))
+  return ret
 end
 
--- Return hood from the hood file based on geo position. This method
--- can return the following data:
--- * real hood if a hood could be determined for the given position
--- * nil if no real hood could be determined
-local function gethood_by_geo(jhood,geo)
-	for n, h in pairs(jhood) do
-		for n, box in pairs(h.boxes) do
-			if ( geo[1] >= box[1][1] and geo[1] < box[2][1] and geo[2] >= box[1][2] and geo[2] < box[2][2] ) then
-				return h
-			end
-		end
-	end
-	return nil
+-- Return hood from the hood file based on geo position or nil, no real hood could be determined
+local function getHoodByGeo(jhood,geo)
+  for n, h in pairs(jhood) do
+    for n, box in pairs(h.boxes) do
+      if ( geo[1] >= box[1][1] and geo[1] < box[2][1] and geo[2] >= box[1][2] and geo[2] < box[2][2] ) then
+	return h
+      end
+    end
+  end
+  return nil
 end
 
--- Return hood from the hood file based on a given BSSID. This method
--- takes a BSSID and returns the real hood that coresponds to the BSSIDs.
--- This method can return the following data:
--- * real hood if a real hood matches the given BSSID
--- * nil if no real hood could be found
-local function gethood_by_bssid(jhood, scan_bssid)
-	for n, h in pairs(jhood) do
-		if scan_bssid:match(h.bssid) then
-			return h
-		end
+-- reconfigures the bssid if needed
+-- returns true
+-- returns false for error while setting bssid via UCI
+local function setHoodWifi(hoodBssid,radios)
+  local ret = true
+  local change = false
+  for index, radio in ipairs(radios) do
+    if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == hoodBssid) then
+      ret = uci:section('wireless', 'wifi-iface', 'ibss_' .. radio,
+        {
+          bssid = hoodBssid
+        }
+      )
+      change = true
+    end
+  end
+  if change then
+    uci:save('wireless')
+    uci:commit('wireless')
+    os.execute('wifi')
+  end
+  return ret
+end
+
+-- Retun a table of current peers from /etc/config/fastd
+local function getCurrentPeers()
+  local configPeername = {}
+  local configPeers = {}
+  uci:foreach('fastd', 'peer',
+    function(s)
+      if s['.name'] then
+	table.insert(configPeername,s)
+      end
+    end
+  )
+  for _,index in pairs(configPeername) do
+    for prefix,peer in pairs(index) do
+      local tmpPeer = {}
+      if prefix:match(".name") then
+	if peer:match("mesh_vpn_backbone_peer_") then
+	  local tmpRemote = uci:get('fastd', peer, 'remote')
+	  tmpRemote = tmpRemote[1]:split(" ")
+	  local remote = {}
+	  remote['host'] = tmpRemote[1]
+	  remote[tmpRemote[2]] = tmpRemote[3]
+	  tmpPeer['key'] = tostring(uci:get('fastd', peer, 'key'))
+	  tmpPeer['remote'] = remote
+	  configPeers[peer] = tmpPeer
 	end
-	return nil
+      end
+    end
+  end
+  return configPeers
+end
+
+-- This method sets a new fastd config and takes care that services are only
+-- stopped or restarted if reconfiguration is needed.
+-- return true
+-- return false for getting error while setting config via UCI
+local function setHoodVPN(hood)
+  local change = false
+  local uciError = false
+  local configPeers = getCurrentPeers()
+  for configIndex, configPeer in pairs(configPeers) do
+    local remove = true
+    local hoodserver0 = nil
+    for index0,serverlist in pairs(hood.servers) do
+      for index1,server in pairs(serverlist) do
+	if index1:match("host") then
+	  local hoodserver1 = server:split('.')
+	  if configIndex == 'mesh_vpn_backbone_peer_'..hoodserver1[1] then
+	    remove = false
+	    hoodserver0 = index0
+	    if not ( configPeer.key == serverlist['publickey'] ) then
+	      if not uci:set('fastd', configIndex, 'key', serverlist['publickey']) then
+		uciError = true
+	      end
+	      change = true
+	    end
+	    server = '\"'..server..'\"'
+	    if not ( configPeer.remote.host == server ) then
+	      local hoodRemote = {}
+	      table.insert(hoodRemote, server..' port '..configPeer.remote.port)
+	      if not uci:set('fastd', configIndex, 'remote', hoodRemote) then
+		uciError = true
+	      end
+	      change = true
+	    end
+	    if not ( configPeer.remote.port == serverlist['port'] ) then
+	      local hoodRemote = {}
+	      table.insert(hoodRemote, configPeer.remote.host..' port '..serverlist['port'])
+	      if not uci:set('fastd', configIndex, 'remote', hoodRemote) then
+		uciError = true
+	      end
+	      change = true
+	    end
+	  end
+	end
+      end
+    end
+    if remove then
+      uci:delete('fastd',configIndex)
+      change = true
+    else
+      if hoodserver0 ~= nil then
+	table.remove(hood.servers,hoodserver0)
+      end
+    end
+  end
+  for index0,serverlist in pairs(hood.servers) do
+    local group = 'mesh_vpn_backbone'
+    local name = serverlist.host:split('.')
+    name = name[1]
+    local remote = {}
+    table.insert(remote, '\"'..serverlist.host..'\"'..' port '..serverlist.port)
+    uci:section('fastd', 'peer', group .. '_peer_' .. name,
+      {
+	enabled = 1,
+	net = 'mesh_vpn',
+	group = group,
+	key = serverlist.publickey,
+	remote = remote
+      }
+    )
+    change = true
+  end
+  if change then
+    uci:save('fastd')
+    uci:commit('fastd')
+    os.execute('/etc/init.d/fastd restart')
+  end
+  if uciError then
+    return false
+  end
+  return true
 end
 
 -- Return the default hood in the hood list.
 -- This method can return the following data:
 -- * default hood
 -- * nil if no default hood has been defined
-local function get_default_hood(jhood)
-	for n, h in pairs(jhood) do
-		if h.defaulthood then
-			return h
-		end
-	end
-	return nil
+local function getDefaultHood(jhood)
+  for n, h in pairs(jhood) do
+    if h.defaulthood then
+      return h
+    end
+  end
+  return nil
 end
 
--- boolean check if batman-adv has gateways
-local function get_gw_range()
-	local gw_connect = false
-	for gw in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/gateways"), 'r'):lines() do
-		if gw:match("Bit") then
-			gw_connect = true
-		end
-	end
-	return gw_connect
+-- Load bssid history
+local function bssid_hist_load( sfile )
+  local bssid_his = {}
+  for line in io.popen(string.format("cat %s 2> /dev/null",sfile),'r'):lines() do
+    if line:match("(%w+:%w+:%w+:%w+:%w+:%w+)") then
+      table.insert(bssid_his,line)
+    end
+  end
+  return bssid_his
 end
 
---Load bssid history
-function bssid_hist_load( sfile )
-	local bssid_his = {}
-	for line in io.popen(string.format("cat %s 2> /dev/null",sfile),'r'):lines() do
-		if line:match("(%w+:%w+:%w+:%w+:%w+:%w+)") then
-			table.insert(bssid_his,line)
-		end
-	end
-	return bssid_his
-end
-
---Save bssid history
-function bssid_hist_save( tbl,filename )
-	local file,err = io.open( filename, "wb" )
-	if err then return err end
-	for idx,str in ipairs( tbl ) do
-		file:write(str)
-	end
-	file:close()
+-- Save bssid history
+local function bssid_hist_save( tbl,filename )
+  local file,err = io.open( filename, "wb" )
+  if err then return err end
+  for idx,str in ipairs( tbl ) do
+    file:write(str)
+  end
+  file:close()
 end
 
 -- Return the BSSID from the next freifunk router with the best signal quality and with has a difference to the actual used BSSID
-local function get_neigbour_bssid(radios)
-	local hoodbssid = nil
-	local bssid_leases = bssid_hist_load("/tmp/hoodselector.leases")
-	for index, radio in ipairs(radios) do
-		hoodbssid = uci:get('wireless', 'ibss_' .. radio, 'bssid')
-		local bssid_his = ""
-		if bssid_leases[index] ~= nil then
-			bssid_his = bssid_leases[index]
-		end
-		bssid_his = bssid_his..' '..hoodbssid
-		local lastQuality = 255
-		local tmphoodbssid = nil
-		for wifiscan in io.popen(string.format("iw %s scan | grep \"%s\" -B8", uci:get('wireless', 'ibss_' .. radio, 'ifname'), uci:get('wireless', 'ibss_' .. radio, 'ssid')),'r'):lines() do
-			if wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)") then
-				tmphoodbssid = wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)"):upper()
-			end
-			if wifiscan:match("signal:") then
-				local quallity = wifiscan:split(" ")
-				quallity = quallity[2]:split(".")
-				if quallity[1]:match("-") then
-					quallity = quallity[1]:split("-")
-				end
-				quallity = tonumber(quallity[2]:match("(%d%d)"))
-				if not bssid_his:match(tmphoodbssid) then
-					if ( lastQuality > quallity ) then
-						lastQuality = quallity
-						hoodbssid = tmphoodbssid
-					end
-				end
-			end
-		end
-		if ( lastQuality == 255 ) then
-			bssid_his = bssid_his:split(" ")
-			hoodbssid = bssid_his[2]
-			bssid_his = ""
-		end
-		bssid_leases[index] = bssid_his
-	end
-	bssid_hist_save(bssid_leases,"/tmp/hoodselector.leases")
-	return hoodbssid
-end
-
--- Retun a table of current peers from /etc/config/fastd
-local function get_current_peers()
-	local config_peername = {}
-	uci:foreach('fastd', 'peer',
-		function(s)
-			if s['.name'] then
-				table.insert(config_peername,s)
-			end
-		end
-	)
-	local config_peers = {}
-	for _,index in pairs(config_peername) do
-		for prafix,peer in pairs(index) do
-			local tmp_peer = {}
-			if prafix:match(".name") then
-				if peer:match("mesh_vpn_backbone_peer_") then
-					local tmpremote = uci:get('fastd', peer, 'remote')
-					tmpremote = tmpremote[1]:split(" ")
-					local remote = {}
-					remote['host'] = tmpremote[1]
-					remote[tmpremote[2]] = tmpremote[3]
-					tmp_peer['key'] = tostring(uci:get('fastd', peer, 'key'))
-					tmp_peer['remote'] = remote
-					config_peers[peer] = tmp_peer
-				end
-			end
-		end
-	end
-	return config_peers
-end
-
---Remove current peers that is not exist in the current hood. Check the integrity and add new peers
-local function set_hoodconfig(hood,radios)
-	local change = false
-	local uci_error = false
-	local config_peers = get_current_peers()
-	for hoodconf,val in pairs(hood) do
-		if hoodconf:match("servers") then
-			for config_index, config_peer in pairs(config_peers) do
-				local remove = true
-				local hood_server = nil
-				for index0,serverlist in pairs(val) do
-					for index1,server in pairs(serverlist) do
-						if index1:match("host") then
-							local hoodserver = server:split('.')
-							if config_index == 'mesh_vpn_backbone_peer_'..hoodserver[1]..'_'..serverlist['port'] then
-								remove = false
-								hood_server = index0
-								if not ( config_peer.key == serverlist['publickey'] ) then
-									local err = uci:set('fastd', config_index, 'key', serverlist['publickey'])
-									if not err then
-										uci_error = true
-									end
-									change = true
-								end
-								server = '\"'..server..'\"'
-								if not ( config_peer.remote.host == server ) then
-									local hood_remote = {}
-									table.insert(hood_remote, server..' port '..config_peer.remote.port)
-									local err uci:set('fastd', config_index, 'remote', hood_remote)
-									if not err then
-										uci_error = true
-									end
-									change = true
-								end
-								if not ( config_peer.remote.port == serverlist['port'] ) then
-									local hood_remote = {}
-									table.insert(hood_remote, config_peer.remote.host..' port '..serverlist['port'])
-									local err uci:set('fastd', config_index, 'remote', hood_remote)
-									if not err then
-										uci_error = true
-									end
-									change = true
-								end
-							end
-						end
-					end
-				end
-				if remove then
-					uci:delete('fastd',config_index)
-					change = true
-				else
-					if hood_server ~= nil then
-						table.remove(val,hood_server)
-					end
-				end
-			end
-		end
-		if hoodconf:match("bssid") then
-			local if_change = false
-			for index, radio in ipairs(radios) do
-				if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == val ) then
-					uci:section('wireless', 'wifi-iface', 'ibss_' .. radio,
-						{
-							bssid = val
-						}
-					)
-					if_change = true
-				end
-			end
-			if if_change then
-				uci:save('wireless')
-				uci:commit('wireless')
-				os.execute('wifi')
-			end
-		end
-	end
-	for hoodconf,val in pairs(hood) do
-        if hoodconf:match("servers") then
-            for index0,serverlist in pairs(val) do
-                local group = 'mesh_vpn_backbone'
-                local name = serverlist.host:split('.')
-                name = name[1]
-                local remote = {}
-                table.insert(remote, '\"'..serverlist.host..'\"'..' port '..serverlist.port)
-                uci:section('fastd', 'peer', group .. '_peer_' .. name .. '_' .. serverlist.port,
-                    {
-                        enabled = 1,
-                        net = 'mesh_vpn',
-                        group = group,
-                        key = serverlist.publickey,
-                        remote = remote
-                    }
-                )
-                change = true
-            end
-        end
+local function getNeigbourBssid(radios)
+  local hoodbssid = nil
+  local bssid_leases = bssid_hist_load("/tmp/hoodselector.leases")
+  for index, radio in ipairs(radios) do
+    hoodbssid = uci:get('wireless', 'ibss_' .. radio, 'bssid')
+    local bssid_his = ""
+    if bssid_leases[index] ~= nil then
+      bssid_his = bssid_leases[index]
     end
-	if change then
-		uci:save('fastd')
-		uci:commit('fastd')
-		os.execute('/etc/init.d/fastd restart')
+    bssid_his = bssid_his..' '..hoodbssid
+    local lastQuality = 255
+    local tmphoodbssid = nil
+    for wifiscan in io.popen(string.format("iw %s scan | grep \"%s\" -B8", uci:get('wireless', 'ibss_' .. radio, 'ifname'), uci:get('wireless', 'ibss_' ..radio, 'ssid')),'r'):lines() do
+      if wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)") then
+	tmphoodbssid = wifiscan:match("(%w+:%w+:%w+:%w+:%w+:%w+)"):upper()
+      end
+      if wifiscan:match("signal:") then
+	local quallity = wifiscan:split(" ")
+	quallity = quallity[2]:split(".")
+	if quallity[1]:match("-") then
+	  quallity = quallity[1]:split("-")
 	end
-	if uci_error then
-		return false
+	quallity = tonumber(quallity[2]:match("(%d%d)"))
+	if not bssid_his:match(tmphoodbssid) then
+	  if ( lastQuality > quallity ) then
+	    lastQuality = quallity
+	    hoodbssid = tmphoodbssid
+	  end
 	end
-	return true
+      end
+    end
+    if ( lastQuality == 255 ) then
+      bssid_his = bssid_his:split(" ")
+      hoodbssid = bssid_his[2]
+      bssid_his = ""
+    end
+    bssid_leases[index] = bssid_his
+  end
+  bssid_hist_save(bssid_leases,"/tmp/hoodselector.leases")
+  return hoodbssid
 end
 
-function exit()
-	pid_clean()
-	os.exit(0)
+-- boolean check if batman-adv has gateways
+local function getGwRange()
+  local gw_connect = false
+  for gw in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/gateways"), 'r'):lines() do
+    if gw:match("Bit") then
+      gw_connect = true
+    end
+  end
+  return gw_connect
+end
+
+-- Return hood from the hood file based on a given BSSID. nil if no matching hood could be found
+local function gethoodByBssid(jhood, scan_bssid)
+  for n, h in pairs(jhood) do
+    if scan_bssid:match(h.bssid) then
+      return h
+    end
+  end
+  return nil
 end
 
 --Start
-local jhood = readhoodfile(file)
-if jhood ~= nil then
-	local radios = get_wifi_devices()
-	if get_gw_range() then
-		-- check if fastd running
-		if ( uci:get('fastd', 'mesh_vpn', 'enabled') == '1' ) then
-			os.execute('/etc/init.d/fastd start')
-		end
-		local geo = get_geolocation()
-		if geo[1] ~= nil or geo[2] ~= nil then
-			local geo_hood = gethood_by_geo(jhood, geo)
-			if geo_hood ~= nil then
-				local no_error = set_hoodconfig(geo_hood,radios)
-				if no_error then
-					io.stderr:write('Setting hood getting from position.\n')
-					exit()
-				end
-				io.stderr:write('Error while setting new hood getting by geoposition.\n')
-				exit()
-			end
-			io.stderr:write('No hood has been defined for current position.\n')
-			local defaultHood = get_default_hood(jhood)
-			if defaultHood ~= nil then
-				local no_error = set_hoodconfig(defaultHood, radios)
-				if no_error then
-					io.stderr:write('Setting defaulthood.\n')
-					exit()
-				end
-				io.stderr:write('Error while setting defaulthood.\n')
-				exit()
-			end
-			io.stderr:write('No defaulthood has been defined.\n')
-			exit()
-		end
-		io.stderr:write('Router dont have a position.\n')
-	end
-	if next(radios) then
-		local scan_bssid = get_neigbour_bssid(radios)
-		if scan_bssid ~= nil then
-			local bssid_hood = gethood_by_bssid(jhood, scan_bssid)
-			if bssid_hood ~= nil then
-				local no_error = set_hoodconfig(bssid_hood,radios)
-				if no_error then
-					io.stderr:write('Setting hood getting from bssid.\n')
-					exit()
-				end
-				io.stderr:write('Error while setting new hood getting by bssid.\n')
-				exit()
-			end
-			io.stderr:write('No hood has been defined for scanned bssid.\n')
-			-- Stop fastd
-			os.execute('/etc/init.d/fastd stop')
-			-- Set BSSID without hood
-			local if_change = false
-			for index, radio in ipairs(radios) do
-				if not ( uci:get('wireless', 'ibss_' .. radio, 'bssid') == scan_bssid ) then
-						uci:section('wireless', 'wifi-iface', 'ibss_' .. radio,
-							{
-								bssid = scan_bssid
-							}
-						)
-						if_change = true
-				end
-			end
-			if if_change then
-				uci:save('wireless')
-				uci:commit('wireless')
-				os.execute('wifi')
-			end
-			-- Wait 15 seconds while meshing its creates
-			os.execute("sleep " .. tonumber(17))
-			-- run autoupdater in backround and exit hoodselector
-			os.execute('autoupdater -f &')
-			exit()
-		end
-	end
-	io.stderr:write('There ara no wifi chipsets detected.\n')
-	exit()
+--Read hoods json file
+local jhood = readHoodfile(file)
+if jhood == nil then
+  io.stderr:write('There seems to have gone something wrong while reading hoodfile from ' .. file .. '\n')
+  exit()
 end
-io.stderr:write('There seems to have gone something wrong while reading hoodfile from ' .. file .. '\n')
+-- Get list of wifi devices
+local radios = getWifiDevices()
+
+--If direct vpn, sed hood by geo.
+if directVPN() then
+  local geo = getGeolocation()
+  if geo[1] ~= nil or geo[2] ~= nil then
+    local geoHood = getHoodByGeo(jhood, geo)
+    if geoHood ~= nil then
+      if setHoodWifi(geoHood.bssid,radios) and setHoodVPN(geoHood) then
+        io.stderr:write('Setting hood getting from position.\n')
+        exit()
+      end
+        io.stderr:write('Error while setting new hood getting by geoposition.\n')
+        exit()
+    end
+    io.stderr:write('No hood has been defined for current position.\n')
+    local defaultHood = getDefaultHood(jhood)
+    if defaultHood ~= nil then
+      if setHoodWifi(defaultHood.bssid,radios) and setHoodVPN(defaultHood) then
+	io.stderr:write('Setting defaulthood.\n')
+	exit()
+      end
+      io.stderr:write('Error while setting defaulthood.\n')
+      exit()
+    end
+  end
+  io.stderr:write('Router dont have a position.\n')
+end
+
+if next(radios) then
+  -- If no direct VPN and batman GWs not in range set scanned bssid
+  local scanBssid = getNeigbourBssid(radios)
+  if scanBssid ~= nil then
+    if not getGwRange() then
+      if setHoodWifi(scanBssid,radios) then
+        io.stderr:write('Setting Bssid getting from Scan.\n')
+      else
+        io.stderr:write('Error while setting Bssid getting from Scan.\n')
+        exit()
+      end
+    end
+
+    -- Set VPN config getting by BSSID
+    local bssidHood = gethoodByBssid(jhood, scanBssid)
+    if bssidHood ~= nil then
+      if setHoodVPN(bssidHood) then
+	io.stderr:write('Setting hood getting from bssid.\n')
+	if ( uci:get('fastd', 'mesh_vpn', 'enabled') == '1' ) then
+	  os.execute('/etc/init.d/fastd start 2> /dev/null')
+	end
+	exit()
+      end
+      io.stderr:write('Error while setting new hood getting by bssid.\n')
+      exit()
+    end
+    io.stderr:write('No hood has been defined for scanned bssid.\n')
+    os.execute('/etc/init.d/fastd stop')
+    exit()
+  end
+  io.stderr:write('Error while scanning wifi.\n')
+end
 exit()
