@@ -30,6 +30,8 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
+	sed -e 's/--.*//' -e '/^$$/d' ./files/usr/sbin/hoodselector > ./files/usr/sbin/hoodselector
+	chmod +x ./files/usr/sbin/hoodselector
 	$(CP) ./files/* $(1)/
 endef
 
