@@ -11,7 +11,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ffnw-nodewatcher2
   SECTION:=daemon
   CATEGORY:=Freifunk Nordwest
-  DEPENDS:=+lua-dkjson
+  DEPENDS:=+dkjson
   TITLE:=Provides status data for netmon
 endef
 
