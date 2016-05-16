@@ -8,6 +8,8 @@ PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
+HOST_BUILD_DEPENDS:=luamin/host
+
 define Package/$(PKG_NAME)
   SECTION:=networke
   CATEGORY:=Freifunk Nordwest
@@ -29,8 +31,13 @@ endef
 define Build/Compile
 endef
 
+define Package/$(PKG_NAME)/compile
+	luamin -f ./luasrc/hoodselector > ./luasrc/hoodselector-min
+	sed -i '1 i\#!/usr/bin/lua' ./luasrc/hoodselector-min
+endef
+
 define Package/$(PKG_NAME)/install
-	sed -e 's/--.*//' -e '/^$$/d' ./files/usr/sbin/hoodselector > ./files/usr/sbin/hoodselector
+	$(CP) ./luasrc/hoodselector-min ./files/usr/sbin/hoodselector
 	chmod +x ./files/usr/sbin/hoodselector
 	$(CP) ./files/* $(1)/
 endef
