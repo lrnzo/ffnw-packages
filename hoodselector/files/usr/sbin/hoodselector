@@ -49,7 +49,9 @@ local file = '/lib/ffnw/hoods/hoods.json'
 
 -- Read the full hoodfile. Return nil for wrong format or no such file
 local function readHoodfile(file)
-  local obj, pos, err = json.decode (io.popen(string.format("cat %s",file), 'r'):read('*a'), 1, nil)
+  local jhood = io.open(file, 'r')
+  if not jhood then return nil end
+  local obj, pos, err = json.decode (jhood:read('*a'), 1, nil)
   if err then
     return nil
   else
@@ -65,19 +67,17 @@ local function exit()
   os.exit(0)
 end
 
-function trim(s)
+local function trim(s)
   -- from PiL2 20.4
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-function sleep(n)
+local function sleep(n)
   os.execute("sleep " .. tonumber(n))
 end
 
----
 -- Function to retrieve console output
---
-function os.capture(cmd, raw)
+local function os.capture(cmd, raw)
     local handle = assert(io.popen(cmd, 'r'))
     local output = assert(handle:read('*a'))
 
@@ -88,33 +88,25 @@ function os.capture(cmd, raw)
     end
 
     output = string.gsub(
-        string.gsub(
-            string.gsub(output, '^%s+', ''),
-            '%s+$',
-            ''
-        ),
-        '[\n\r]+',
-        ' '
+    	string.gsub(string.gsub(output, '^%s+', ''), '%s+$', ''), '[\n\r]+', ' '
     )
-
    return output
 end
 
-
 local function vpn_stop()
-	os.execute('/etc/init.d/fastd stop')
-	io.stderr:write('VPN stopped.\n')
+  os.execute('/etc/init.d/fastd stop')
+  io.stderr:write('VPN stopped.\n')
 end
 
 local function vpn_start()
-	os.execute('/etc/init.d/fastd start')
-	io.stderr:write('VPN started.\n')
+  os.execute('/etc/init.d/fastd start')
+  io.stderr:write('VPN started.\n')
 end
 
 local function vpn_disable()
   -- disable VPN if not already disabled
   os.execute('/etc/init.d/fastd disable')
-	io.stderr:write('VPN disabled.\n')
+  io.stderr:write('VPN disabled.\n')
 end
 
 local function vpn_enable()
@@ -124,10 +116,10 @@ end
 
 local function wireless_restart()
   os.execute('wifi')
-	io.stderr:write('Wireless restarted.\n')
+  io.stderr:write('Wireless restarted.\n')
 end
 
--- Return a wifi device list
+-- Get a list of wifi devices return an emty table for no divices
 local function getWifiDevices()
   local radios = {}
   uci:foreach('wireless', 'wifi-device',
@@ -143,7 +135,13 @@ end
 -- one can have two mesh SSIDs. One for 2,4Ghz and one for 5Ghz).
 local function get_mesh_ssids()
 	local site_src = "/lib/gluon/site.json"
-	local site, pos, err = json.decode (io.popen(string.format("cat %s",site_src), 'r'):read('*a'), 1, nil)
+	local site_srcOpen = io.open(site_src, 'r')
+	if not site_srcOpen then
+	  io.stderr:write("Error reading file " .. site_src .. "\n")
+	  io.stderr:write("Existing...\n")
+	  exit()
+	end
+	local site, pos, err = json.decode (site_srcOpen:read('*a'), 1, nil)
 	if err then
 		io.stderr:write("Error reading file " .. site_src .. "\n")
 		io.stderr:write("Existing...\n")
@@ -175,7 +173,7 @@ local function wlan_list_sorted(radios)
 			local row = {}
 			row["encryption"] = "open"
 			row["radio"] = radio
-      -- loop through each line in the output of iw
+                        -- loop through each line in the output of iw
 			for wifiscan in io.popen(wireless_scan, 'r'):lines() do
 				-- the following line matches a new network in the output of iw
 				if wifiscan:match("BSS (%w+:%w+:%w+:%w+:%w+:%w+)") then
@@ -208,7 +206,7 @@ local function wlan_list_sorted(radios)
 					end
 				end
 
-        -- get frequency
+                                -- get frequency
 				if wifiscan:match("freq:") then
 					row["frequency"] = wifiscan:split(":")
 					row["frequency"] = row["frequency"][2]
@@ -290,15 +288,11 @@ local function filter_default_hood_wlan_networks(default_hood, wlan_list)
 	return filtered_wlan_list
 end
 
--- bool if direct VPN
+-- bool if direct VPN. The detection is realaise by searching the fastd network interface inside the originator table
 local function directVPN()
-  local uci_vpn_net = uci:get('fastd', 'mesh_vpn_backbone', 'net')
-  local uci_vpn_ifname = uci:get('network', uci_vpn_net, 'ifname')
   -- escape special chars "[]-"
-  uci_vpn_ifname = uci_vpn_ifname:gsub("%-", "%%-")
-  local testString = '%[  '..uci_vpn_ifname..'%]'
-  for outgoingIF in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/originators"), 'r'):lines() do
-    if outgoingIF:match(testString) then
+  for outgoingIF in io.open("/sys/kernel/debug/batman_adv/bat0/originators", 'r'):lines() do
+    if outgoingIF:match(string.gsub("%[  " .. uci:get('fastd', 'mesh_vpn_backbone', 'net') .. "%]","%_",'-'):gsub("%-", "%%-")) then
       return true
     end
   end
@@ -528,7 +522,7 @@ end
 
 -- boolean check if batman-adv has gateways
 local function batmanHasGateway()
-  for gw in io.popen(string.format("cat /sys/kernel/debug/batman_adv/bat0/gateways"), 'r'):lines() do
+  for gw in io.open("/sys/kernel/debug/batman_adv/bat0/gateways", 'r'):lines() do
     if gw:match("Bit") then
       return true
     end
