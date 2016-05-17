@@ -12,7 +12,7 @@ define Package/$(PKG_NAME)
   SECTION:=networke
   CATEGORY:=Freifunk Nordwest
   TITLE:=Select the hoods depending on the geo coordinate
-  DEPENDS:=+lwtrace +ffnw-hoods +dkjson +gluon-mesh-batman-adv-15 +gluon-mesh-vpn-fastd
+  DEPENDS:=+lwtrace +ffnw-hoods +dkjson gluon-mesh-batman-adv-15 +gluon-mesh-vpn-fastd
 endef
 
 define Package/$(PKG_NAME)/description
