@@ -36,7 +36,7 @@ define Package/$(PKG_NAME)
   SUBMENU:=Lua
   URL:=https://github.com/mathiasbynens/luamin
   TITLE:=Luamin is a lua minifyer tool written in JS
-  DEPENDS:=+node +=luaparse
+  DEPENDS:=+node +luaparse
   MAINTAINER:=Jan-Tarek Butt <tarek@ring0.de>
 endef
 
