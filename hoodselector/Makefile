@@ -21,6 +21,9 @@ endef
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) ./luasrc/* $(PKG_BUILD_DIR)/
+	sed -e 's/--.*//' -e '/^$$$$/d' $(PKG_BUILD_DIR)/hoodselector > $(PKG_BUILD_DIR)/hoodselector-min
+	chmod +x $(PKG_BUILD_DIR)/hoodselector-min
 endef
 
 define Build/Configure
@@ -30,9 +33,9 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	sed -e 's/--.*//' -e '/^$$/d' ./files/usr/sbin/hoodselector > ./files/usr/sbin/hoodselector
-	chmod +x ./files/usr/sbin/hoodselector
 	$(CP) ./files/* $(1)/
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(CP) $(PKG_BUILD_DIR)/hoodselector-min $(1)/usr/sbin/hoodselector
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
