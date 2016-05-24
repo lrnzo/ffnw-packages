@@ -33,17 +33,17 @@
     "boxes": []
   },
   {
-    "name": "lk-ibb",
+    "name": "lk-st",
     "bssid": "02:00:0A:12:80:00",
     "defaulthood": false,
     "servers": [
       {
-        "host": "lk-ibb01.sn.ffnw.de",
+        "host": "lk-st01.sn.ffnw.de",
         "port": "10000",
         "publickey": "ba21772b6f858fcbdf897121ced4bb3c277721f640dda9743166252cc66278f2"
       },
       {
-        "host": "lk-ibb02.sn.ffnw.de",
+        "host": "lk-st02.sn.ffnw.de",
         "port": "10001",
         "publickey": "4d1eb91cb01aeb3ef16b61ac77832f29b8e190ff6ace9253bc060427675f86bc"
       }
@@ -75,11 +75,11 @@
     "boxes": [
       [
         [
-          53.46,
+          53.36,
           7.85
         ],
         [
-          53.64,
+          53.72,
           8.18
         ]
       ]
@@ -137,8 +137,8 @@
           7.95
         ],
         [
-          52.33,
-          8.15
+          52.37,
+          8.42
         ]
       ]
     ]
