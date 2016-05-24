@@ -5,31 +5,142 @@
     "defaulthood": true,
     "servers": [
       {
-        "host": "vpn02.ffnw.de",
+        "host": "default02.ffnw.de",
         "port": "11111",
         "publickey": "32a02dd5e6b9233926e178ac609023ad30bcf26954d38d410088bbdc0b2258cb"
       },
       {
-        "host": "vpn03.ffnw.de",
+        "host": "default03.ffnw.de",
         "port": "11111",
         "publickey": "9737c65a17cfaa8339315ee53d2b9e02520733780362efacf9503737f5a23204"
       },
       {
-        "host": "vpn04.ffnw.de",
+        "host": "default04.ffnw.de",
         "port": "11111",
         "publickey": "18199a10620dbd13728a09402ca2364436ca27e46e669a2ebdfe20976dc45e6f"
       },
       {
-        "host": "vpn05.ffnw.de",
+        "host": "default05.ffnw.de",
         "port": "11111",
         "publickey": "5c1738236ba6930f654fd5e815e0c63ac03f81551ee2b183045b256fb133f77d"
       },
       {
-        "host": "vpn06.ffnw.de",
+        "host": "default06.ffnw.de",
         "port": "11111",
         "publickey": "22e270ff9b2d1017c3a0b00dd22a58ef7e5915a355eeb16f0b8b52d7eb377869"
       }
     ],
     "boxes": []
+  },
+  {
+    "name": "lk-ibb",
+    "bssid": "02:00:0A:12:80:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-ibb01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "ba21772b6f858fcbdf897121ced4bb3c277721f640dda9743166252cc66278f2"
+      },
+      {
+        "host": "lk-ibb02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "4d1eb91cb01aeb3ef16b61ac77832f29b8e190ff6ace9253bc060427675f86bc"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          52.18,
+          7.41
+        ],
+        [
+          52.35,
+          7.9
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "lk-fri",
+    "bssid": "02:00:0A:12:88:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-fri01.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "613ffbc8a5a2b1a8602866c0bd44afddecee79c49cde52ee4dd5df73c88d0437"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          53.46,
+          7.85
+        ],
+        [
+          53.64,
+          8.18
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "ol",
+    "bssid": "02:00:0A:12:98:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "ol01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "2807aacfbccff12794c80a1c368e89966bee9376416cc1773a5224c6f94c76d6"
+      },
+      {
+        "host": "ol02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "9e3eb2b7094efbd574de2d7401589e2279c4e9e65522c0985fb57a98dfb605c1"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          53.08,
+          8.14
+        ],
+        [
+          53.22,
+          8.3
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "lk-os",
+    "bssid": "02:00:0A:12:90:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-os-01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "148fa1af96a0ee6653d150fa11b6b018738a711f47b8d8bb05ad569880ad6415"
+      },
+      {
+        "host": "lk-os-02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "c91a74b295f8d1372080c0a7536b094631c4cab6af3fd339e135c4f971c91242"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          52.13,
+          7.95
+        ],
+        [
+          52.33,
+          8.15
+        ]
+      ]
+    ]
   }
 ]
