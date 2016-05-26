@@ -368,7 +368,7 @@ local function vpn_reconfiguration_needed(hood_serverlist)
 	for local_server_config_name, local_server in pairs(local_serverlist) do
 		local local_server_exists_in_hoodfile = false
 		for hood_server_index,hood_server in pairs(hood_serverlist) do
-			if (local_server_config_name == 'mesh_vpn_backbone_peer_'.. hood_server["host"]:split('.')[1]) then
+			if (local_server_config_name == 'mesh_vpn_backbone_peer_'.. hood_server["host"]:split('.')[1]:gsub("%-", "%_")) then
 				local_server_exists_in_hoodfile = true
 				if ( local_server.key ~= hood_server['publickey'] ) then
 					return true
@@ -389,7 +389,7 @@ local function vpn_reconfiguration_needed(hood_serverlist)
 	for hood_server_index,hood_server in pairs(hood_serverlist) do
 		local hood_server_exists_locally = false
 		for local_server_config_name, local_server in pairs(local_serverlist) do
-			if (local_server_config_name == 'mesh_vpn_backbone_peer_'.. hood_server["host"]:split('.')[1]) then
+			if (local_server_config_name == 'mesh_vpn_backbone_peer_'.. hood_server["host"]:split('.')[1]:gsub("%-", "%_")) then
 				hood_server_exists_locally = true
 			end
 		end
@@ -410,7 +410,7 @@ local function vpn_reconfigure(hood_serverlist)
 	-- add servers from hoodfile
 	local group = 'mesh_vpn_backbone'
 	for i,hood_server in pairs(hood_serverlist) do
-		uci:section('fastd', 'peer', group .. '_peer_' .. hood_server.host:split('.')[1],
+		uci:section('fastd', 'peer', group .. '_peer_' .. hood_server.host:split('.')[1]:gsub("%-", "%_"),
 			{
 				enabled = 1,
 				net = 'mesh_vpn',
