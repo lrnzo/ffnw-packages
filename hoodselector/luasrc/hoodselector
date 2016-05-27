@@ -76,6 +76,11 @@ local function sleep(n)
   os.execute("sleep " .. tonumber(n))
 end
 
+local function wireless_restart()
+  os.execute('wifi')
+  io.stderr:write('Wireless restarted.\n')
+end
+
 local function vpn_stop()
   os.execute('/etc/init.d/fastd stop')
   io.stderr:write('VPN stopped.\n')
@@ -96,11 +101,6 @@ end
 local function vpn_enable()
   -- enable VPN if not already enabled
   os.execute('/etc/init.d/fastd enable')
-end
-
-local function wireless_restart()
-  os.execute('wifi')
-  io.stderr:write('Wireless restarted.\n')
 end
 
 local function brclient_restart()
