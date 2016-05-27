@@ -76,9 +76,10 @@ local function sleep(n)
   os.execute("sleep " .. tonumber(n))
 end
 
-local function wireless_restart()
-  os.execute('wifi')
-  io.stderr:write('Wireless restarted.\n')
+local function brclient_restart()
+  os.execute('ifconfig br-client down')
+  os.execute('ifconfig br-client up')
+  io.stderr:write('Interface br-clinet restarted.\n')
 end
 
 local function vpn_stop()
@@ -103,10 +104,9 @@ local function vpn_enable()
   os.execute('/etc/init.d/fastd enable')
 end
 
-local function brclient_restart()
-  os.execute('ifconfig br-client down')
-  os.execute('ifconfig br-client up')
-  io.stderr:write('Interface br-clinet restarted.\n')
+local function wireless_restart()
+  os.execute('wifi')
+  io.stderr:write('Wireless restarted.\n')
 end
 
 -- Get a list of wifi devices return an emty table for no divices
