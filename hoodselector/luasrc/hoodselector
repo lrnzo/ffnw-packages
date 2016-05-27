@@ -84,6 +84,7 @@ end
 local function vpn_start()
   os.execute('/etc/init.d/fastd start')
   io.stderr:write('VPN started.\n')
+  brclient_restart()
 end
 
 local function vpn_disable()
@@ -100,6 +101,12 @@ end
 local function wireless_restart()
   os.execute('wifi')
   io.stderr:write('Wireless restarted.\n')
+end
+
+local function brclient_restart()
+  os.execute('ifconfig br-client down')
+  os.execute('ifconfig br-client up')
+  io.stderr:write('Interface br-clinet restarted.\n')
 end
 
 -- Get a list of wifi devices return an emty table for no divices
