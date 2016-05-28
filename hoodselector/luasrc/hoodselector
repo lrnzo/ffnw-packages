@@ -79,7 +79,7 @@ end
 local function brclient_restart()
   os.execute('ifconfig br-client down')
   os.execute('ifconfig br-client up')
-  io.stderr:write('Interface br-clinet restarted.\n')
+  io.stderr:write('Interface br-client restarted.\n')
 end
 
 local function vpn_stop()
