@@ -4,6 +4,8 @@ PKG_NAME:=ffnw-hoods
 PKG_VERSION:=1
 PKG_RELEASE:=1
 
+PKG_BUILD_DEPENDS := luci-base/host lua-cjson/host
+
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
@@ -29,7 +31,8 @@ define Build/Compile
 endef
 
 define Package/$(PKG_NAME)/install
-	$(CP) ./files/* $(1)/
+	$(INSTALL_DIR) $(1)/lib/ffnw/hoods
+	lua -e 'print(require("cjson").encode(assert(dofile("./files/lib/ffnw/hoods/hoods.json"))))' > $(1)/lib/ffnw/hoods/hoods.json
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
