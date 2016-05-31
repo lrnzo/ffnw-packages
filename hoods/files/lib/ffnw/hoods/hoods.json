@@ -40,12 +40,12 @@
       {
         "host": "lk-st01.sn.ffnw.de",
         "port": "10000",
-        "publickey": "ba21772b6f858fcbdf897121ced4bb3c277721f640dda9743166252cc66278f2"
+        "publickey": "c6485ba100d633dbebdbfad24ba4a010a242d6d7bb9817173259e9d3677b929d"
       },
       {
         "host": "lk-st02.sn.ffnw.de",
         "port": "10001",
-        "publickey": "4d1eb91cb01aeb3ef16b61ac77832f29b8e190ff6ace9253bc060427675f86bc"
+        "publickey": "88991ed1d7c6c4e1ffa9c97a1aa390d8ac03917ddacd9494c949abcbea6c6c94"
       }
     ],
     "boxes": [
