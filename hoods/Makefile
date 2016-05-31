@@ -32,7 +32,7 @@ endef
 
 define Package/$(PKG_NAME)/install
 	$(INSTALL_DIR) $(1)/lib/ffnw/hoods
-	lua -e 'print(require("cjson").encode(assert(dofile("./files/lib/ffnw/hoods/hoods.json"))))' > $(1)/lib/ffnw/hoods/hoods.json
+	lua -e 'local cjson = require("cjson"); print(cjson.encode(cjson.decode(assert(io.open("./files/lib/ffnw/hoods/hoods.json"):read("*a")))))' > $(1)/lib/ffnw/hoods/hoods.json
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
