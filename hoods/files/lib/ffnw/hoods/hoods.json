@@ -120,12 +120,12 @@
     "defaulthood": false,
     "servers": [
       {
-        "host": "lk-os01.sn.ffnw.de",
+        "host": "lk-os-01.sn.ffnw.de",
         "port": "10000",
         "publickey": "148fa1af96a0ee6653d150fa11b6b018738a711f47b8d8bb05ad569880ad6415"
       },
       {
-        "host": "lk-os02.sn.ffnw.de",
+        "host": "lk-os-02.sn.ffnw.de",
         "port": "10001",
         "publickey": "c91a74b295f8d1372080c0a7536b094631c4cab6af3fd339e135c4f971c91242"
       }
