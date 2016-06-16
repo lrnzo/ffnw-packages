@@ -229,5 +229,29 @@
         ]
       ]
     ]
+  },
+  {
+    "name": "lohne",
+    "bssid": "02:00:0A:12:A0:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-vec01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "18e3fd453b3ed675e23ead15727b6989879db5c401a71e1a5c4744f86d473eea"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          52.63,
+          8.16
+        ],
+        [
+          52.7,
+          8.3
+        ]
+      ]
+    ]
   }
 ]
