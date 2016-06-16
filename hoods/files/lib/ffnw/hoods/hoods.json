@@ -176,5 +176,34 @@
         ]
       ]
     ]
+  },
+  {
+    "name": "wittmund",
+    "bssid": "02:00:0A:12:B8:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-wtm01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "b57a979cc9ae698b4173b5b57b2b193e38de5cc423059023894965bba8458e45"
+      },
+      {
+        "host": "lk-wtm02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "29a241d64158bc51f01e44bc188e91e5b887985da3688a02ce12b33439e17053"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          53.5,
+          7.56
+        ],
+        [
+          53.72,
+          7.85
+        ]
+      ]
+    ]
   }
 ]
