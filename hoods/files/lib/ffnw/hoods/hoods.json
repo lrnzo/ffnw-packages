@@ -70,6 +70,11 @@
         "host": "lk-fri01.sn.ffnw.de",
         "port": "10001",
         "publickey": "613ffbc8a5a2b1a8602866c0bd44afddecee79c49cde52ee4dd5df73c88d0437"
+      },
+      {
+        "host": "lk-fri02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "14f33c20c3487904e6d1420e9105cfb62b66bc3216d5cdb8a055461b6ed0415d"
       }
     ],
     "boxes": [
