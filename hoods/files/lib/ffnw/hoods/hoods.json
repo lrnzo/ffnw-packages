@@ -147,5 +147,34 @@
         ]
       ]
     ]
+  },
+  {
+    "name": "butjadingen",
+    "bssid": "02:00:0A:12:B0:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-bra01.sn.ffnw.de",
+        "port": "10000",
+        "publickey": "e581343a5d17afc1c8c205424e00e26adef6c520ec54b6f462f962245e5b02cd"
+      },
+      {
+        "host": "lk-bra02.sn.ffnw.de",
+        "port": "10001",
+        "publickey": "f9940159383e953044102b3e1529f568dd068c3f34062177ef74d244e06f65ef"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          53.45,
+          8.18
+        ],
+        [
+          53.63,
+          8.57
+        ]
+      ]
+    ]
   }
 ]
