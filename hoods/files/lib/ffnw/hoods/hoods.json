@@ -205,5 +205,29 @@
         ]
       ]
     ]
+  },
+  {
+    "name": "dinklage",
+    "bssid": "02:00:0A:12:A8:00",
+    "defaulthood": false,
+    "servers": [
+      {
+        "host": "lk-vec01.sn.ffnw.de",
+        "port": "10002",
+        "publickey": "ca1b5487ffc20a1f90e0ac14e835d84ab9e52612b5ca62e073d0a13dad98775e"
+      }
+    ],
+    "boxes": [
+      [
+        [
+          52.62,
+          7.91
+        ],
+        [
+          52.74,
+          8.16
+        ]
+      ]
+    ]
   }
 ]
