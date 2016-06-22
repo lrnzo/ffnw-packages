@@ -67,6 +67,15 @@ local function exit()
   os.exit(0)
 end
 
+-- Check if names can be resolved.
+if os.execute("nslookup gw-os01.sn.ffnw.de")==0 then
+  io.stderr:write("DNS is working.\n")
+else
+  io.stderr:write("DNS is not working yet.\n")
+  exit()
+end
+
+
 local function trim(s)
   -- from PiL2 20.4
   return (s:gsub("^%s*(.-)%s*$", "%1"))
